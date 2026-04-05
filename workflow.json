@@ -389,7 +389,7 @@
       },
       "credentials": {
         "telegramApi": {
-          "id": "lFnI6XXhGbOZJr8X",
+          "id": "fuhHUiZAIRMl1MeP",
           "name": "Telegram_TedyTech_Admin"
         }
       }
@@ -493,7 +493,7 @@
       "typeVersion": 1.2,
       "credentials": {
         "telegramApi": {
-          "id": "lFnI6XXhGbOZJr8X",
+          "id": "fuhHUiZAIRMl1MeP",
           "name": "Telegram_TedyTech_Admin"
         }
       },
@@ -537,7 +537,7 @@
       "typeVersion": 1.2,
       "credentials": {
         "telegramApi": {
-          "id": "lFnI6XXhGbOZJr8X",
+          "id": "fuhHUiZAIRMl1MeP",
           "name": "Telegram_TedyTech_Admin"
         }
       },
@@ -1251,7 +1251,7 @@
         },
         "credentials": {
           "telegramApi": {
-            "id": "lFnI6XXhGbOZJr8X",
+            "id": "fuhHUiZAIRMl1MeP",
             "name": "Telegram_TedyTech_Admin"
           }
         }
