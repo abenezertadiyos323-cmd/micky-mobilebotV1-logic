@@ -1,5 +1,5 @@
 {
-  "name": "abenier-bot-logic",
+  "name": "micky-mobilebot-logic",
   "private": true,
   "version": "1.0.0",
   "description": "Minimal local tooling for n8n workflow read and backup.",
