@@ -1,0 +1,3 @@
+- **Understanding JSON Guard - Pure Validator**: Removed FRAGILE `$node` reference to Session Bootstrap. Switched to reading directly from `$json`.
+- **Validation**: Removed FRAGILE `$node['Business Data Resolver']` and `$node['Rules Layer']` references. Switched to assigning variables from `$json`.
+- **Session Save**: Removed FRAGILE `$node['Validation']` mapping. Now stringifying `$json.session_update_payload` recursively.

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Callback Action?",
+    "id": "callback-action-if"
+  },
+  {
+    "name": "Callback Action Handler",
+    "id": "callback-action-handler"
+  },
+  {
+    "name": "Callback Telegram Send",
+    "id": "callback-telegram-send"
+  },
+  {
+    "name": "Callback Admin Notify?",
+    "id": "callback-admin-notify-if"
+  },
+  {
+    "name": "Callback Admin Telegram Send",
+    "id": "callback-admin-telegram-send"
+  },
+  {
+    "name": "Callback Session Save",
+    "id": "callback-session-save"
+  }
+]

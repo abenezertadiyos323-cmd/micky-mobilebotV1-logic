@@ -1,0 +1,3 @@
+- **Session Bootstrap**: Removed hardcoded `client_config` (store_name: TedyTech) and replaced with `$env` and `$json` fallbacks.
+- **Understanding AI**: Replaced hardcoded brand name ('TedyTech') and specific business assumption ('phone sales') with dynamic variables.
+- **Reply AI**: Replaced hardcoded brand name ('TedyTech') and specific business assumption ('phone sales') with dynamic variables.

@@ -1,0 +1,54 @@
+{
+  "sessionBootstrapSpecific": [
+    {
+      "source": "Session Bootstrap",
+      "type": "main",
+      "branch": 0,
+      "missingTarget": "callback-action-if"
+    }
+  ],
+  "globalMissing": [
+    {
+      "source": "Session Bootstrap",
+      "type": "main",
+      "branch": 0,
+      "missingTarget": "callback-action-if"
+    },
+    {
+      "source": "Callback Action?",
+      "type": "main",
+      "branch": 0,
+      "missingTarget": "callback-action-handler"
+    },
+    {
+      "source": "Callback Action Handler",
+      "type": "main",
+      "branch": 0,
+      "missingTarget": "callback-telegram-send"
+    },
+    {
+      "source": "Callback Action Handler",
+      "type": "main",
+      "branch": 1,
+      "missingTarget": "callback-session-save"
+    },
+    {
+      "source": "Callback Action Handler",
+      "type": "main",
+      "branch": 2,
+      "missingTarget": "callback-admin-notify-if"
+    },
+    {
+      "source": "Callback Admin Notify?",
+      "type": "main",
+      "branch": 0,
+      "missingTarget": "callback-admin-telegram-send"
+    },
+    {
+      "source": "Callback Telegram Send",
+      "type": "main",
+      "branch": 0,
+      "missingTarget": "callback-session-save"
+    }
+  ]
+}

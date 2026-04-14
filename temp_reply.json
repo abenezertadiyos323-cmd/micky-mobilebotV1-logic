@@ -1,0 +1,63 @@
+={{ (() => {
+  const blockedKeys = new Set([
+    'post_price_mode',
+    'result_type',
+    'facts_for_reply',
+    'variant 1',
+    'variant 2',
+    'variant 3',
+    'variant 4',
+    'variant_1',
+    'variant_2',
+    'variant_3',
+    'variant_4',
+    'variant1',
+    'variant2',
+    'variant3',
+    'variant4',
+  ]);
+
+  const stripLegacyFields = (value) => {
+    if (Array.isArray(value)) {
+      return value.map(stripLegacyFields);
+    }
+
+    if (!value || typeof value !== 'object') {
+      return value ?? null;
+    }
+
+    const output = {};
+    for (const [key, entry] of Object.entries(value)) {
+      if (blockedKeys.has(key)) {
+        continue;
+      }
+      output[key] = stripLegacyFields(entry);
+    }
+    return output;
+  };
+
+  const systemPrompt = `You are a helpful Ethiopian phone seller on Telegram. Speak in natural Amharic.
+- If rules_output.next_action is provide_info, use client_config fields (store_address, store_location_link, warranty_policy, exchange_rules) to answer the customer question directly.
+- If resolver_output has products, present them naturally in max 3 lines.
+- Do not invent prices or stock. If information is missing, ask for it clearly.
+- Your output MUST be strict JSON containing ONLY the key "reply_text".`;
+
+  return JSON.stringify({  return JSON.stringify({
+    model: 'google/gemini-3.1-flash-lite-preview',
+    temperature: 0.05,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: JSON.stringify({
+          customer_message: $json.event.text,
+          rules_output: stripLegacyFields($json.rules_output ?? null),
+          resolver_output: stripLegacyFields($json.resolver_output ?? null),
+          client_config: $json.client_config ?? null,
+          output_contract: { reply_text: "string" },
+        }),
+      },
+    ],
+  });
+})() }}

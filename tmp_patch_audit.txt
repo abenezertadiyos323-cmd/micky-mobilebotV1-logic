@@ -1,0 +1,36 @@
+=== rules_negotiation ===
+hasAnchoredContext = Boolean(
+    session.flow_context?.buy_flow?.current_interest
+    && session.conversation_state?.current_flow
+  );
+  rules_output = {
+    ...rules_output,
+    reply_mode: hasAnchoredContext ? 'resume_previous_flow' : 'business_re
+
+=== bdr_info_block ===
+w = resolverInput.flow === 'info' || resolverInput.flow === 'support';
+if (products.length > 0) {
+  if (effectiveConstraints.model) {
+    const hasModelMatch = candidateProducts.some((
+
+=== bdr_has_store_info ===
+False
+
+=== val_effective ===
+effective_reply_text = raw_safe_to_send ? reply_text : fallback_reply_text;
+const now = Date.now();
+const isStartReset = event.event_type ==
+
+=== val_allowlist ===
+tput && !['single_product', 'multiple_options', 'no_match', 'out_of_stock', 'clarification_needed', 'exchange_offer'].includes(resolver_output.result_
+
+=== val_safe ===
+safe_to_send: true,
+    original_safe_to_send: raw_safe_to_s
+
+=== val_has_store_info_allowed ===
+False
+
+=== admin_conn ===
+['Should Resolve', 'Admin Handoff Notify?']
+

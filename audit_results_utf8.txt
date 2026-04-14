@@ -1,0 +1,12 @@
+Total nodes: 24
+CODE NODE: [Event Normalizer] - Lines: 33 - Contains BizLogic? False - Mutates State? False
+CODE NODE: [Session Bootstrap] - Lines: 123 - Contains BizLogic? True - Mutates State? True
+CODE NODE: [Understanding JSON Guard - Pure Validator] - Lines: 182 - Contains BizLogic? True - Mutates State? False
+FRAGILE: [Understanding JSON Guard - Pure Validator] depends on nodes via $node: {'SESSION_BOOTSTRAP_NODE'}
+CODE NODE: [Rules Layer] - Lines: 350 - Contains BizLogic? True - Mutates State? True
+ERROR_HANDLING: [Product Search (Convex Test)] has continueRegularOutput
+CODE NODE: [Business Data Resolver] - Lines: 295 - Contains BizLogic? True - Mutates State? True
+FRAGILE: [Business Data Resolver] depends on nodes via $node: {'RULES_NODE'}
+CODE NODE: [Validation] - Lines: 77 - Contains BizLogic? True - Mutates State? False
+FRAGILE: [Session Save] depends on nodes via $node: {'Validation'}
+CODE NODE: [Callback Action Handler] - Lines: 57 - Contains BizLogic? False - Mutates State? True

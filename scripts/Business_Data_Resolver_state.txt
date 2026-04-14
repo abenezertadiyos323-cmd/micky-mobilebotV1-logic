@@ -1,0 +1,22 @@
+L12: const session = base.session && typeof base.session === 'object' ? base.session : {};
+L87: const shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)
+L88: ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)
+L90: const currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 10);
+L91: const sessionConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};
+L92: const sessionConstraints = {
+L93: budget_etb: normalizeNullableNumber(sessionConstraintsSource.budget_etb),
+L94: brand: normalizeText(sessionConstraintsSource.brand ?? currentInterest?.brand ?? null),
+L95: model: normalizeText(sessionConstraintsSource.model ?? currentInterest?.model ?? null),
+L96: storage: normalizeStorageValue(sessionConstraintsSource.storage ?? currentInterest?.storage ?? null),
+L97: condition: normalizeText(sessionConstraintsSource.condition ?? currentInterest?.condition ?? null),
+L101: budget_etb: Object.prototype.hasOwnProperty.call(productContextSource, 'budget_etb') ? normalizeNullableNumber(productContextSource.budget_etb) : sessionConstraints.budget_etb,
+L102: brand: Object.prototype.hasOwnProperty.call(productContextSource, 'brand') ? normalizeText(productContextSource.brand) : sessionConstraints.brand,
+L103: model: Object.prototype.hasOwnProperty.call(productContextSource, 'model') ? normalizeText(productContextSource.model) : sessionConstraints.model,
+L104: storage: Object.prototype.hasOwnProperty.call(productContextSource, 'storage') ? normalizeStorageValue(productContextSource.storage) : (sessionConstraints.storage ?? extractStorage(String(event.text ?? ''))),
+L105: condition: Object.prototype.hasOwnProperty.call(productContextSource, 'condition') ? normalizeText(productContextSource.condition) : sessionConstraints.condition,
+L179: current_interest: session.flow_context?.buy_flow?.current_interest ?? null,
+L227: ? ((Number.isFinite(Number(session.message_count ?? null)) ? Number(session.message_count) : 0) % 4) + 1
+L242: const target_phone_raw = session.flow_context?.buy_flow?.current_interest;
+L250: const exchangeDetails = isRecord(session.exchange_details) ? session.exchange_details : {};
+L251: const collectedConstraints = isRecord(session.collected_constraints) ? session.collected_constraints : {};
+L286: session,

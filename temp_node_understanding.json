@@ -1,0 +1,31 @@
+{
+  "parameters": {
+    "method": "POST",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "sendHeaders": true,
+    "headerParameters": {
+      "parameters": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+        }
+      ]
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are a neutral conversational function classifier for a Telegram phone sales bot.\\nYour only job is to understand the real meaning and conversational act of the current customer message in full context.\\n\\nReturn ONLY valid JSON. No explanation. No extra text.\\n\\nClassify every message by its true conversational function first, then by business intent.\\n\\nAllowed message_function (choose exactly one):\\n- info_request ? asking for store info, location, address, hours, delivery, warranty, payment, contact\\n- refinement ? adding or changing a detail to an existing conversation (e.g. 128gb, the second one, cheaper)\\n- negotiation ? trying to reduce price, last price, discount, \\\"a bit lower\\\", tnsh yekanesal, wagaw tnsh, ????, ???\\n- acknowledgment ? simple thanks, okay, greeting, light social reply\\n- clarification ? message is unclear, incomplete, or needs more info\\n- fresh_request ? completely new business request with no previous context\\\\nCRITICAL: If the customer message names a specific phone model (e.g. iphone 12, samsung a55) not found in shown_products or current_interest, classify as fresh_request NOT refinement. Refinement is ONLY for messages referencing an already-shown product by pronoun, ordinal, or same model name.\\n\\nRules:\\n- Prioritize semantic meaning and full session context over literal words.\\n- For Amharic and mixed-language messages, focus on real intent, not surface politeness.\\n- Never classify negotiation or pricing messages as acknowledgment.\\n- Never default to product_search or fresh_request when the message is clearly something else.\\n- If the message is ambiguous or noisy, set message_function = clarification, confidence low, ambiguity high.\\n- Use session history only to resolve references (that one, cheaper one, 128gb), never to force a sales topic.\\n\\nOutput exactly this schema and nothing else:\\n\\n{\\n  \\\"message_function\\\": \\\"info_request\\\" | \\\"refinement\\\" | \\\"negotiation\\\" | \\\"acknowledgment\\\" | \\\"clarification\\\" | \\\"fresh_request\\\",\\n  \\\"business_intent\\\": \\\"store_info\\\" | \\\"product_search\\\" | \\\"pricing\\\" | \\\"exchange\\\" | \\\"support\\\" | null,\\n  \\\"topic\\\": \\\"store_info\\\" | \\\"product\\\" | \\\"exchange\\\" | \\\"pricing\\\" | \\\"location\\\" | null,\\n  \\\"confidence\\\": 0.0,\\n  \\\"ambiguity\\\": 0.0,\\n  \\\"missing_information\\\": [],\\n  \\\"reference_resolution\\\": {\\\"refers_to\\\": null, \\\"resolved_id\\\": null},\\n  \\\"last_asked_key\\\": null\\n}\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        event: {\n          event_type: $json.event?.event_type ?? null,\n          deep_link: $json.event?.deep_link ?? null,\n        },\n        session_context: {\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          collected_constraints: $json.session?.collected_constraints ?? {\n            budget_etb: null,\n            brand: null,\n            model: null,\n            storage: null,\n            condition: null,\n          },\n          last_asked_key: $json.session?.last_asked_key ?? null,\n          current_interest: $json.session?.flow_context?.buy_flow?.current_interest ?? null,\n          shown_products: Array.isArray($json.session?.flow_context?.buy_flow?.shown_products)\n            ? $json.session.flow_context.buy_flow.shown_products.slice(0, 5)\n            : [],\n          last_messages: Array.isArray($json.session?.conversation_history)\n            ? $json.session.conversation_history.slice(-6)\n            : [],\n        },\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+    "options": {}
+  },
+  "id": "understanding-ai",
+  "name": "Understanding AI",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.2,
+  "position": [
+    1280,
+    300
+  ]
+}

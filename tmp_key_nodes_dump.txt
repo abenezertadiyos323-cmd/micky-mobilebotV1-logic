@@ -1,0 +1,656 @@
+﻿
+====== NODE 3: Session Bootstrap ======
+const payload = $json ?? {};
+let event = payload.event ?? null;
+
+const readEventFromNode = (nodeName) => {
+  try {
+    const nodeRef = $(nodeName);
+    if (!nodeRef || !nodeRef.isExecuted) return null;
+    const candidate = nodeRef.first()?.json?.event;
+    return candidate && typeof candidate === 'object' ? candidate : null;
+  } catch {
+    return null;
+  }
+};
+
+if (!event || typeof event !== 'object') {
+  event = readEventFromNode('Event Normalizer')
+    ?? readEventFromNode('Event Loader')
+    ?? readEventFromNode('Unify Payload')
+    ?? readEventFromNode('Telegram Input')
+    ?? readEventFromNode('Telegram Trigger')
+    ?? null;
+}
+
+if (!event || typeof event !== 'object') {
+  event = { chatId: 0, error: 'trigger_event_lost' };
+  console.log(JSON.stringify({
+    node: 'Session Bootstrap',
+    warning: 'trigger_event_lost',
+    fallback_nodes: ['Event Normalizer', 'Event Loader', 'Unify Payload', 'Telegram Input', 'Telegram Trigger'],
+  }));
+}
+
+event = event && typeof event === 'object' ? event : {};
+const remoteEnvelope = payload.session && typeof payload.session === 'object'
+  ? payload.session
+  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);
+const remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')
+  ? remoteEnvelope.data
+  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);
+const existing = remoteData && typeof remoteData === 'object' ? remoteData : {};
+const now = Date.now();
+const history = Array.isArray(existing.conversation_history)
+  ? existing.conversation_history
+  : (Array.isArray(existing.message_history) ? existing.message_history : []);
+const shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)
+  ? existing.flow_context.buy_flow.shown_products
+  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);
+const currentInterest = existing.flow_context?.buy_flow?.current_interest
+  ?? existing.active_product_id
+  ?? existing.selected_option
+  ?? null;
+const currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;
+const currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;
+const active = existing.conversation_state?.is_active;
+const baseCount = Number.isFinite(Number(existing.message_count))
+  ? Number(existing.message_count)
+  : history.filter((item) => item && typeof item === 'object').length;
+const normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;
+const normalizeBudget = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+const currentInterestRecord = currentInterest && typeof currentInterest === 'object' ? currentInterest : {};
+const existingConstraints = existing.collected_constraints && typeof existing.collected_constraints === 'object'
+  ? existing.collected_constraints
+  : {};
+const collected_constraints = {
+  budget_etb: normalizeBudget(existingConstraints.budget_etb ?? existing.budget_etb ?? null),
+  brand: normalizeText(existingConstraints.brand ?? currentInterestRecord.brand ?? null),
+  model: normalizeText(existingConstraints.model ?? currentInterestRecord.model ?? currentInterestRecord.name ?? null),
+  storage: normalizeText(existingConstraints.storage ?? currentInterestRecord.storage ?? null),
+  condition: normalizeText(existingConstraints.condition ?? currentInterestRecord.condition ?? null),
+};
+const session = {
+  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),
+  customer_id: String(existing.customer_id ?? event.userId ?? ''),
+  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,
+  last_message_at: now,
+  message_count: Math.max(0, baseCount),
+  conversation_state: {
+    current_topic: currentTopic,
+    current_flow: currentFlow,
+    is_active: typeof active === 'boolean' ? active : true,
+  },
+  flow_context: {
+    buy_flow: {
+      shown_products: shownProducts,
+      current_interest: currentInterest,
+    },
+  },
+  collected_constraints,
+  last_asked_key: normalizeText(existing.last_asked_key ?? existing.last_asked_field ?? null),
+  conversation_history: history.slice(-12).filter((item) => item && typeof item === 'object'),
+  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'
+    ? {
+        required: Boolean(existing.admin_escalation.required),
+        reason: existing.admin_escalation.reason ?? null,
+        status: existing.admin_escalation.status ?? null,
+      }
+    : {
+        required: false,
+        reason: null,
+        status: null,
+      },
+};
+const client_config = {
+  "store_name": "TedyTech",
+  "default_language": "am",
+  "supports_exchange": true,
+  "supports_finance": false,
+  "telegram_bot_name": "TedyTech Bot"
+};
+return [{
+  json: {
+    event,
+    session,
+    client_config,
+    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',
+  },
+}];
+
+====== NODE 5: Understanding JSON Guard - Pure Validator ======
+const base = (() => {
+  try {
+    return $item(0).$node['Session Bootstrap'].json ?? {};
+  } catch {
+    return {};
+  }
+})();
+const payload = $json ?? {};
+const event = base.event && typeof base.event === 'object' ? base.event : {};
+const session = base.session && typeof base.session === 'object' ? base.session : {};
+const client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};
+
+const allowedMessageFunctions = ['info_request', 'refinement', 'negotiation', 'acknowledgment', 'clarification', 'fresh_request'];
+const allowedBusinessIntents = ['store_info', 'product_search', 'pricing', 'exchange', 'support'];
+const allowedTopics = ['store_info', 'product', 'exchange', 'pricing', 'location'];
+const hardFallback = {
+  message_function: 'clarification',
+  business_intent: null,
+  topic: null,
+  confidence: 0.0,
+  ambiguity: 1.0,
+  missing_information: [],
+  reference_resolution: {
+    refers_to: null,
+    resolved_id: null,
+  },
+  last_asked_key: null,
+};
+
+const issues = [];
+const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const parseJsonObject = (value) => {
+  if (!value) return null;
+  if (isRecord(value)) return value;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+const normalizeEnum = (value, allowed, label) => {
+  if (typeof value !== 'string') {
+    issues.push(label + '_type');
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!allowed.includes(normalized)) {
+    issues.push(label + '_invalid');
+    return null;
+  }
+  return normalized;
+};
+const normalizeNullableEnum = (value, allowed, label) => {
+  if (value === null || value === undefined) return null;
+  return normalizeEnum(value, allowed, label);
+};
+const normalizeUnitNumber = (value, label) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    issues.push(label + '_type');
+    return null;
+  }
+  if (value < 0 || value > 1) {
+    issues.push(label + '_range');
+    return null;
+  }
+  return value;
+};
+const normalizeStringArray = (value, label) => {
+  if (!Array.isArray(value)) {
+    issues.push(label + '_type');
+    return null;
+  }
+  const normalized = [];
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      issues.push(label + '_item_type');
+      return null;
+    }
+    const text = item.trim();
+    if (text) normalized.push(text);
+  }
+  return normalized;
+};
+const normalizeNullableString = (value, label) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') {
+    issues.push(label + '_type');
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized || null;
+};
+const validateReferenceResolution = (value) => {
+  if (!isRecord(value)) {
+    issues.push('reference_resolution_type');
+    return null;
+  }
+  return {
+    refers_to: normalizeNullableString(value.refers_to, 'reference_resolution.refers_to'),
+    resolved_id: normalizeNullableString(value.resolved_id, 'reference_resolution.resolved_id'),
+  };
+};
+
+const rawResponse = parseJsonObject(payload.choices?.[0]?.message?.content)
+  || parseJsonObject(payload.output_text)
+  || parseJsonObject(payload.text)
+  || parseJsonObject(payload.data)
+  || parseJsonObject(payload.result)
+  || parseJsonObject(payload);
+
+let understanding_output = hardFallback;
+if (!rawResponse) {
+  issues.push('understanding_response_not_parseable');
+} else {
+  const validated = {
+    message_function: normalizeEnum(rawResponse.message_function, allowedMessageFunctions, 'message_function'),
+    business_intent: normalizeNullableEnum(rawResponse.business_intent, allowedBusinessIntents, 'business_intent'),
+    topic: normalizeNullableEnum(rawResponse.topic, allowedTopics, 'topic'),
+    confidence: normalizeUnitNumber(rawResponse.confidence, 'confidence'),
+    ambiguity: normalizeUnitNumber(rawResponse.ambiguity, 'ambiguity'),
+    missing_information: normalizeStringArray(rawResponse.missing_information, 'missing_information'),
+    reference_resolution: validateReferenceResolution(rawResponse.reference_resolution),
+    last_asked_key: normalizeNullableString(rawResponse.last_asked_key, 'last_asked_key'),
+  };
+
+  const validationFailed = [
+    validated.message_function,
+    validated.confidence,
+    validated.ambiguity,
+    validated.missing_information,
+    validated.reference_resolution,
+  ].some((value) => value === null) || issues.length > 0;
+
+  if (!validationFailed) {
+    understanding_output = {
+      message_function: validated.message_function,
+      business_intent: validated.business_intent,
+      topic: validated.topic,
+      confidence: validated.confidence,
+      ambiguity: validated.ambiguity,
+      missing_information: validated.missing_information,
+      reference_resolution: validated.reference_resolution,
+      last_asked_key: validated.last_asked_key,
+    };
+  }
+}
+
+const understanding_meta = {
+  validator_mode: 'pure_schema_validator',
+  schema_mode: 'minimal_guard_v2',
+  valid: issues.length === 0,
+  issues,
+  raw_response: rawResponse,
+  fallback_applied: issues.length > 0,
+  timestamp: Date.now(),
+};
+console.log(JSON.stringify({
+  node: 'Understanding JSON Guard - Pure Validator',
+  valid: understanding_meta.valid,
+  fallback_applied: understanding_meta.fallback_applied,
+  issues: understanding_meta.issues,
+  raw_response: rawResponse,
+}));
+
+return [{
+  json: {
+    event,
+    session,
+    client_config,
+    understanding_output,
+    understanding_meta,
+  },
+}];
+
+====== NODE 6: Rules Layer ======
+const input = $json ?? {};
+const event = input.event && typeof input.event === 'object' ? input.event : {};
+const session = input.session && typeof input.session === 'object' ? input.session : {};
+const client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};
+const understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};
+const understanding_meta = input.understanding_meta && typeof input.understanding_meta === 'object' ? input.understanding_meta : {};
+
+const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;
+const normalizeNullableNumber = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+const normalizePositiveNumber = (value) => {
+  const numeric = normalizeNullableNumber(value);
+  return numeric !== null && numeric > 0 ? numeric : null;
+};
+const normalizeStringArray = (value) => Array.isArray(value)
+  ? value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())
+  : [];
+const normalizeProduct = (value, index) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' || typeof value === 'number') {
+    return { id: String(value), brand: null, model: null, storage: null, condition: null, price_etb: null, name: String(value), raw: value, index };
+  }
+  if (!isRecord(value)) return null;
+  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;
+  return {
+    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),
+    brand: normalizeText(value.brand),
+    model: normalizeText(value.model ?? value.name ?? value.title),
+    storage: normalizeText(value.storage),
+    condition: normalizeText(value.condition),
+    price_etb: normalizeNullableNumber(priceValue),
+    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || normalizeText(value.name ?? value.title),
+    raw: value,
+    index,
+  };
+};
+
+const shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)
+  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)
+  : [];
+const currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);
+const currentFlow = session.conversation_state?.current_flow ?? null;
+const currentTopic = session.conversation_state?.current_topic ?? null;
+const existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};
+const mergedConstraints = {
+  budget_etb: normalizePositiveNumber(existingConstraintsSource.budget_etb),
+  brand: normalizeText(existingConstraintsSource.brand ?? currentInterest?.brand ?? null),
+  model: normalizeText(existingConstraintsSource.model ?? currentInterest?.model ?? null),
+  storage: normalizeText(existingConstraintsSource.storage ?? currentInterest?.storage ?? null),
+  condition: normalizeText(existingConstraintsSource.condition ?? currentInterest?.condition ?? null),
+};
+
+const referenceSource = isRecord(understanding_output.reference_resolution) ? understanding_output.reference_resolution : {};
+const reference_resolution = {
+  reference_type: normalizeText(referenceSource.refers_to) ?? 'none',
+  resolved: Boolean(normalizeText(referenceSource.resolved_id)),
+  resolved_product_id: normalizeText(referenceSource.resolved_id),
+  resolved_product_name: null,
+};
+const resolveProductById = (id) => shownProducts.find((item) => item.id === id) ?? (currentInterest?.id === id ? currentInterest : null) ?? null;
+const resolvedProduct = reference_resolution.resolved && reference_resolution.resolved_product_id
+  ? resolveProductById(reference_resolution.resolved_product_id)
+  : null;
+
+const businessIntent = normalizeText(understanding_output.business_intent);
+const messageFunction = normalizeText(understanding_output.message_function) ?? 'clarification';
+const understandingTopic = normalizeText(understanding_output.topic);
+const confidence = typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0;
+const missingInformation = normalizeStringArray(understanding_output.missing_information);
+const requestedLastAskedKey = normalizeText(understanding_output.last_asked_key);
+const hasActiveContext = Boolean(
+  currentFlow
+  || currentTopic
+  || shownProducts.length > 0
+  || currentInterest
+  || Object.values(mergedConstraints).some((value) => value !== null)
+  || (Array.isArray(session.conversation_history) && session.conversation_history.length > 0)
+);
+const intentFlow = {
+  product_search: 'buy',
+  pricing: 'buy',
+  exchange: 'exchange',
+  store_info: 'info',
+  support: 'support',
+}[businessIntent ?? ''] ?? null;
+const sameFlowIntent = Boolean(
+  (currentFlow === 'buy' && ['product_search', 'pricing'].includes(businessIntent ?? ''))
+  || (currentFlow === 'exchange' && businessIntent === 'exchange')
+  || (currentFlow === 'info' && businessIntent === 'store_info')
+  || (currentFlow === 'support' && businessIntent === 'support')
+);
+const shouldContinueContext = Boolean(
+  hasActiveContext && (
+    ['refinement', 'negotiation'].includes(messageFunction)
+    || reference_resolution.reference_type !== 'none'
+    || sameFlowIntent
+  )
+);
+const effectiveFlow = intentFlow ?? currentFlow ?? null;
+const effectiveTopic = understandingTopic ?? (shouldContinueContext ? currentTopic ?? null : null);
+const hasKnownBudget = mergedConstraints.budget_etb !== null;
+const hasKnownBrand = Boolean(mergedConstraints.brand);
+const hasKnownModel = Boolean(mergedConstraints.model);
+const hasProductContext = Boolean(
+  resolvedProduct
+  || currentInterest
+  || shownProducts.length > 0
+  || hasKnownBudget
+  || hasKnownBrand
+  || hasKnownModel
+);
+
+const computedMissingFields = [];
+if (effectiveFlow === 'buy' && missingInformation.length === 0) {
+  const needFreshProductAnchor = !hasProductContext && !shouldContinueContext;
+  if (needFreshProductAnchor) {
+    if (hasKnownBrand && !hasKnownModel) computedMissingFields.push('model');
+    else if (!hasKnownBrand && !hasKnownModel) computedMissingFields.push('brand_or_model');
+  }
+}
+if (effectiveFlow === 'exchange' && missingInformation.length === 0) {
+  const needProductAnchor = !currentInterest && shownProducts.length === 0;
+  if (needProductAnchor) {
+    if (hasKnownBrand && !hasKnownModel) computedMissingFields.push('model');
+    else if (!hasKnownBrand && !hasKnownModel) computedMissingFields.push('brand_or_model');
+  }
+  if (!mergedConstraints.condition) computedMissingFields.push('condition');
+}
+const missing_fields = missingInformation.length > 0 ? missingInformation.slice() : computedMissingFields;
+if (effectiveFlow === 'exchange' && !mergedConstraints.condition && !missing_fields.includes('condition')) {
+  missing_fields.push('condition');
+}
+if (effectiveFlow === 'exchange' && missing_fields.length > 2) {
+  missing_fields.length = 2;
+}
+const last_asked_key = requestedLastAskedKey ?? missing_fields[0] ?? null;
+
+const productContext = {
+  brand: mergedConstraints.brand,
+  model: mergedConstraints.model,
+  storage: mergedConstraints.storage,
+  condition: mergedConstraints.condition,
+  budget_etb: mergedConstraints.budget_etb,
+  current_interest: currentInterest ? currentInterest.raw : null,
+  current_topic: currentTopic,
+  current_flow: currentFlow,
+};
+
+let rules_output = {
+  reply_mode: shouldContinueContext ? 'resume_previous_flow' : 'off_topic_redirect',
+  should_call_resolver: false,
+  resolver_input: {
+    flow: effectiveFlow,
+    product_context: productContext,
+    missing_fields,
+    resolved_reference: resolvedProduct ? { id: resolvedProduct.id, raw: resolvedProduct.raw } : null,
+    resolved_product_name: resolvedProduct?.name ?? null,
+  },
+  session_update: {
+    last_topic: effectiveTopic,
+    flow_stage: shouldContinueContext ? (currentFlow ?? effectiveFlow) : effectiveFlow,
+    ambiguous_reference: reference_resolution.reference_type !== 'none' ? reference_resolution.reference_type : null,
+    resolved_ambiguity: reference_resolution.resolved,
+    collected_constraints: mergedConstraints,
+    last_asked_key,
+  },
+  confidence,
+  reasoning: shouldContinueContext ? 'default_resume_previous_flow' : 'default_off_topic_redirect',
+};
+
+if (event.event_type === 'start_reset' || event.event_type === 'deep_link_start') {
+  rules_output = {
+    ...rules_output,
+    reply_mode: 'small_talk_redirect',
+    should_call_resolver: false,
+    session_update: {
+      ...rules_output.session_update,
+      last_topic: null,
+      flow_stage: null,
+      ambiguous_reference: null,
+      resolved_ambiguity: false,
+      last_asked_key: null,
+    },
+    reasoning: 'start_reset_welcome',
+  };
+} else if (event.event_type === 'deep_link_start') {
+  rules_output = {
+    ...rules_output,
+    reply_mode: 'business_resolve',
+    should_call_resolver: true,
+    resolver_input: {
+      ...rules_output.resolver_input,
+      flow: 'buy',
+      missing_fields: [],
+    },
+    session_update: {
+      ...rules_output.session_update,
+      last_topic: 'product',
+      flow_stage: 'buy',
+      last_asked_key: null,
+    },
+    reasoning: 'deep_link_start_business_entry',
+  };
+} else if (!Number.isFinite(confidence) || confidence < 0.6) {
+  rules_output = {
+    ...rules_output,
+    reply_mode: shouldContinueContext && currentFlow ? 'resume_previous_flow' : 'handoff_admin',
+    should_call_resolver: Boolean(shouldContinueContext && currentFlow),
+    reasoning: shouldContinueContext && currentFlow ? 'low_confidence_but_context_preserved' : 'low_understanding_confidence',
+  };
+} else if (messageFunction === 'acknowledgment') {
+  const shouldOpenLightConversation = Boolean(
+    Number(session.message_count ?? 0) === 0
+    && !currentFlow
+    && !currentTopic
+    && shownProducts.length === 0
+    && !currentInterest
+    && !Object.values(mergedConstraints).some((value) => value !== null)
+  );
+  rules_output = {
+    ...rules_output,
+    reply_mode: shouldOpenLightConversation ? 'small_talk_redirect' : 'acknowledge_and_close',
+    should_call_resolver: false,
+    reasoning: shouldOpenLightConversation ? 'acknowledgment_first_turn_redirect' : 'acknowledgment_detected',
+  };
+} else if (messageFunction === 'clarification') {
+  rules_output = {
+    ...rules_output,
+    reply_mode: hasActiveContext ? 'clarify_reference' : 'handoff_admin',
+    should_call_resolver: false,
+    reasoning: hasActiveContext ? 'clarification_with_existing_context' : 'clarification_without_context',
+  };
+} else if (businessIntent === 'store_info' || understandingTopic === 'store_info' || understandingTopic === 'location' || (messageFunction === 'info_request' && (businessIntent === null || businessIntent === 'store_info'))) {
+  rules_output = {
+    ...rules_output,
+    reply_mode: 'business_resolve',
+    should_call_resolver: true,
+    resolver_input: {
+      ...rules_output.resolver_input,
+      flow: 'info',
+      missing_fields: [],
+    },
+    session_update: {
+      ...rules_output.session_update,
+      last_topic: understandingTopic ?? 'store_info',
+      flow_stage: shouldContinueContext ? (currentFlow ?? null) : 'info',
+      last_asked_key: null,
+    },
+node : [eval]:17
+At line:1 char:1
++ node -e "
++ ~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([eval]:17:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    console.log('PARAMS:', JSON.stringify(n.parameters?.bodyParameters).substring(0,2000));
+                                                                       ^
+
+TypeError: Cannot read properties of undefined (reading 'substring')
+    at [eval]:17:72
+    at Array.forEach (<anonymous>)
+    at [eval]:8:9
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:446:12
+    at [eval]-wrapper:6:24
+    at runScriptInContext (node:internal/process/execution:444:60)
+    at evalFunction (node:internal/process/execution:279:30)
+    reasoning: 'store_info_bypasses_product_flow',
+  };
+} else if (businessIntent === 'support') {
+  rules_output = {
+    ...rules_output,
+    reply_mode: shouldContinueContext && currentFlow ? 'resume_previous_flow' : 'business_resolve',
+    should_call_resolver: true,
+    resolver_input: {
+      ...rules_output.resolver_input,
+      flow: 'support',
+      missing_fields: [],
+    },
+    session_update: {
+      ...rules_output.session_update,
+      last_topic: understandingTopic ?? 'support',
+      flow_stage: shouldContinueContext ? (currentFlow ?? 'support') : 'support',
+      last_asked_key: null,
+    },
+    reasoning: 'support_request_routed',
+  };
+} else if (messageFunction === 'negotiation') {
+  const negotiationFlow = currentFlow === 'exchange' ? 'exchange' : (intentFlow ?? currentFlow ?? 'buy');
+  const hasAnchoredContext = Boolean(
+    session.flow_context?.buy_flow?.current_interest
+    && session.conversation_state?.current_flow
+  );
+  rules_output = {
+    ...rules_output,
+    reply_mode: hasAnchoredContext ? 'resume_previous_flow' : 'business_resolve',
+    should_call_resolver: hasAnchoredContext ? false : true,
+    resolver_input: {
+      ...rules_output.resolver_input,
+      flow: negotiationFlow,
+      missing_fields: [],
+    },
+    session_update: {
+      ...rules_output.session_update,
+      flow_stage: negotiationFlow,
+      last_asked_key: null,
+    },
+    reasoning: hasAnchoredContext
+      ? 'negotiation_anchored_to_existing_interest'
+      : (hasProductContext || hasActiveContext ? 'negotiation_business_resolve_with_context' : 'negotiation_business_resolve_without_context'),
+  };
+} else if (messageFunction === 'refinement') {
+  rules_output = {
+    ...rules_output,
+    reply_mode: shouldContinueContext || hasActiveContext ? 'resume_previous_flow' : 'business_resolve',
+    should_call_resolver: Boolean(intentFlow ?? currentFlow),
+    session_update: {
+      ...rules_output.session_update,
+      flow_stage: shouldContinueContext ? (currentFlow ?? effectiveFlow) : effectiveFlow,
+      last_asked_key,
+    },
+    reasoning: 'refinement_reuses_session_context',
+  };
+} else if (messageFunction === 'fresh_request') {
+  const isBusiness = businessIntent !== null;
+  rules_output = {
+    ...rules_output,
+    reply_mode: shouldContinueContext && currentFlow ? 'resume_previous_flow' : (isBusiness ? 'business_resolve' : 'off_topic_redirect'),
+    should_call_resolver: shouldContinueContext && currentFlow ? true : isBusiness,
+    resolver_input: {
+      ...rules_output.resolver_input,
+      flow: intentFlow ?? effectiveFlow,
+    },
+    session_update: {
+      ...rules_output.session_update,
+      flow_stage: shouldContinueContext ? (currentFlow ?? effectiveFlow) : (intentFlow ?? effectiveFlow),
+      last_asked_key,
+    },
+    reasoning: shouldContinueContext && currentFlow ? 'fresh_message_prefers_existing_context' : (isBusiness ? 'fresh_business_request' : 'fresh_non_business_message'),
+  };
+}
+
+return [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];
+
+====== NODE 7: Product Search (Convex Test) ======
+URL: ={{ "https://fastidious-schnauzer-265.convex.site/api/products/search" }}
+BODY: true
+    at evalTypeScript (node:internal/process/execution:291:3)
+    at node:internal/main/eval_string:74:3
+
+Node.js v22.21.0

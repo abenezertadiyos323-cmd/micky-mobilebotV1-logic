@@ -1,0 +1,13 @@
+CHUNK1:
+candidateProducts = products.length > 0 ? products : shownProducts;
+const productNameForMatch = (product) => [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();
+let constraintMatchFailed = false;
+const isNonProductFlow = resolverInput.flow === 'info' ||
+
+CHUNK2:
+w && constraintMatchFailed && result_type !== 'clarification_needed' && result_type !== 'exchange_offer') {
+  result_type = 'no_match';
+  next_step = 'ask_clarification';
+}
+
+const isNewProductFocus = !curr

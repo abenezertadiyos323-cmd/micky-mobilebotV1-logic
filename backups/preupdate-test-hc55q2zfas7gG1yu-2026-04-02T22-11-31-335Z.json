@@ -1,0 +1,1072 @@
+{
+  "updatedAt": "2026-04-02T20:59:41.761Z",
+  "createdAt": "2026-04-02T17:36:18.951Z",
+  "id": "hc55q2zfas7gG1yu",
+  "name": "Abenier Bot Logic Base",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "telegram-input",
+      "name": "Telegram Input",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+      },
+      "id": "event-normalizer",
+      "name": "Event Normalizer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"userId\": \"={{ $json.event.userId }}\",\n  \"chatId\": \"={{ $json.event.chatId }}\"\n}",
+        "options": {}
+      },
+      "id": "session-load",
+      "name": "Session Load",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nif (!event) {\n  try {\n    event = $item(0).$node['Event Normalizer'].json.event;\n  } catch {\n    event = null;\n  }\n}\n\nevent = event && typeof event === 'object' ? event : {};\nconst remoteEnvelope = payload.session && typeof payload.session === 'object'\n  ? payload.session\n  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);\nconst remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')\n  ? remoteEnvelope.data\n  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);\nconst existing = remoteData && typeof remoteData === 'object' ? remoteData : {};\nconst now = Date.now();\nconst history = Array.isArray(existing.conversation_history)\n  ? existing.conversation_history\n  : (Array.isArray(existing.message_history) ? existing.message_history : []);\nconst shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)\n  ? existing.flow_context.buy_flow.shown_products\n  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);\nconst currentInterest = existing.flow_context?.buy_flow?.current_interest\n  ?? existing.active_product_id\n  ?? existing.selected_option\n  ?? null;\nconst currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;\nconst currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;\nconst active = existing.conversation_state?.is_active;\nconst baseCount = Number.isFinite(Number(existing.message_count))\n  ? Number(existing.message_count)\n  : history.filter((item) => item && typeof item === 'object').length;\nconst session = {\n  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(existing.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, baseCount),\n  conversation_state: {\n    current_topic: currentTopic,\n    current_flow: currentFlow,\n    is_active: typeof active === 'boolean' ? active : true,\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  conversation_history: history.slice(-12).filter((item) => item && typeof item === 'object'),\n  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'\n    ? {\n        required: Boolean(existing.admin_escalation.required),\n        reason: existing.admin_escalation.reason ?? null,\n        status: existing.admin_escalation.status ?? null,\n      }\n    : {\n        required: false,\n        reason: null,\n        status: null,\n      },\n};\nconst client_config = {\n  \"store_name\": \"TedyTech\",\n  \"default_language\": \"am\",\n  \"supports_exchange\": true,\n  \"supports_finance\": false,\n  \"telegram_bot_name\": \"TedyTech Bot\"\n};\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',\n  },\n}];"
+      },
+      "id": "session-bootstrap",
+      "name": "Session Bootstrap",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 1 Understanding AI for the TedyTech Telegram bot.\\nReturn ONLY one valid JSON object. No markdown. No explanation. No extra text.\\nDo not generate any reply text. Do not output workflow actions beyond the required schema.\\nDo not output old fields such as user_need, next_action, tentative_flow, ambiguity, or evidence_accumulated.\\nUse exactly this schema:\\n{\\n  \\\"message_classification\\\": \\\"business | off_topic | small_talk | acknowledgment\\\",\\n  \\\"business_topic\\\": \\\"product_search | pricing | stock_check | exchange | support | info_request | null\\\",\\n  \\\"sentiment\\\": \\\"positive | neutral | negative | playful | frustrated\\\",\\n  \\\"tone\\\": \\\"casual | formal | urgent | humorous\\\",\\n  \\\"entities_detected\\\": {\\n    \\\"product_mentions\\\": [],\\n    \\\"price_mentions\\\": [],\\n    \\\"condition_mentions\\\": [],\\n    \\\"ambiguous_references\\\": []\\n  },\\n  \\\"extracted_need\\\": \\\"string\\\",\\n  \\\"confidence\\\": 0.0,\\n  \\\"reasoning\\\": \\\"string\\\"\\n}\\nAllowed few-shot examples:\\nUser: \\\"selam\\\" -> {\\\"message_classification\\\":\\\"small_talk\\\",\\\"business_topic\\\":null,\\\"sentiment\\\":\\\"positive\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"greeting\\\",\\\"confidence\\\":0.95,\\\"reasoning\\\":\\\"simple greeting\\\"}\\nUser: \\\"adis slk falige\\\" -> {\\\"message_classification\\\":\\\"business\\\",\\\"business_topic\\\":\\\"product_search\\\",\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"looking for a new phone\\\",\\\"confidence\\\":0.86,\\\"reasoning\\\":\\\"buy intent without model\\\"}\\nUser: \\\"I want exchange\\\" -> {\\\"message_classification\\\":\\\"business\\\",\\\"business_topic\\\":\\\"exchange\\\",\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"wants phone exchange\\\",\\\"confidence\\\":0.9,\\\"reasoning\\\":\\\"clear exchange intent\\\"}\\nUser: \\\"where is your shop\\\" -> {\\\"message_classification\\\":\\\"business\\\",\\\"business_topic\\\":\\\"info_request\\\",\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"asks for store information\\\",\\\"confidence\\\":0.93,\\\"reasoning\\\":\\\"store information request\\\"}\\nUser: \\\"ok thanks\\\" -> {\\\"message_classification\\\":\\\"acknowledgment\\\",\\\"business_topic\\\":null,\\\"sentiment\\\":\\\"positive\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"acknowledges previous answer\\\",\\\"confidence\\\":0.97,\\\"reasoning\\\":\\\"closing acknowledgment\\\"}\\nUser: \\\"weather today\\\" -> {\\\"message_classification\\\":\\\"off_topic\\\",\\\"business_topic\\\":null,\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"asks about weather\\\",\\\"confidence\\\":0.98,\\\"reasoning\\\":\\\"off-topic request\\\"}\\nIf the latest message says things like \\\"that one\\\", \\\"the one\\\", \\\"cheaper one\\\", \\\"first one\\\", or \\\"last one\\\", record that phrase inside entities_detected.ambiguous_references.\\nConfidence must be between 0 and 1.\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        client_config: $json.client_config,\n        event: $json.event,\n        session: $json.session,\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-8) : [],\n      }),\n    },\n  ],\n}) }}",
+        "options": {}
+      },
+      "id": "understanding-ai",
+      "name": "Understanding AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = (() => {\n  try {\n    return $item(0).$node['Session Bootstrap'].json ?? {};\n  } catch {\n    return {};\n  }\n})();\nconst payload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst issues = [];\n\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (typeof value === 'object' && !Array.isArray(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\n\nconst rawResponse = parseJsonObject(payload.choices?.[0]?.message?.content)\n  || parseJsonObject(payload.output_text)\n  || parseJsonObject(payload.text)\n  || parseJsonObject(payload.data)\n  || parseJsonObject(payload.result)\n  || parseJsonObject(payload);\nif (!rawResponse) {\n  issues.push('understanding_response_not_parseable');\n}\n\nconst text = String(event.text ?? '').trim();\nconst lower = text.toLowerCase();\nconst hasAny = (tokens) => tokens.some((token) => lower.includes(token));\nconst clamp = (value, min, max) => Math.min(max, Math.max(min, value));\nconst toStringArray = (value) => Array.isArray(value)\n  ? value.filter((item) => typeof item === 'string').map((item) => item.trim()).filter(Boolean)\n  : [];\nconst normalizeEnum = (value, allowed, synonyms, label) => {\n  if (value === null && allowed.includes(null)) return null;\n  if (typeof value === 'string') {\n    const normalized = synonyms[String(value).trim().toLowerCase()] ?? String(value).trim().toLowerCase();\n    if (allowed.includes(normalized)) return normalized;\n    issues.push(label + '_invalid:' + value);\n  }\n  return undefined;\n};\n\nconst greetingSignal = hasAny(['selam', 'hello', 'hi', 'hey', 'good morning', 'good evening']);\nconst acknowledgmentSignal = hasAny(['ok', 'okay', 'thanks', 'thank you', 'got it', 'noted']);\nconst offTopicSignal = hasAny(['weather', 'football', 'soccer', 'movie', 'music', 'joke', 'news', 'time', 'sleep']);\nconst pricingSignal = hasAny(['price', 'how much', 'cost', 'budget', 'last price']);\nconst stockSignal = hasAny(['available', 'availability', 'in stock', 'stock']);\nconst exchangeSignal = hasAny(['exchange', 'swap', 'trade', 'trade in']);\nconst supportSignal = hasAny(['problem', 'issue', 'complaint', 'support', 'help']);\nconst infoSignal = hasAny(['where', 'location', 'address', 'shop', 'store', 'hours', 'payment', 'warranty', 'delivery', 'policy']);\nconst productSignal = hasAny(['phone', 'iphone', 'samsung', 'tecno', 'infinix', 'redmi', 'xiaomi', 'pixel', 'model', 'slk', 'buy', 'want']);\nconst humorousSignal = hasAny(['haha', 'lol', 'lmao']);\nconst urgentSignal = hasAny(['urgent', 'asap', 'quick', 'immediately']);\nconst formalSignal = hasAny(['please', 'kindly']);\nconst negativeSignal = hasAny(['bad', 'terrible', 'angry', 'annoyed']);\nconst frustratedSignal = hasAny(['frustrated', 'upset', 'fed up']) || (negativeSignal && supportSignal);\n\nconst legacyFieldSignals = rawResponse && typeof rawResponse === 'object' && (\n  Object.prototype.hasOwnProperty.call(rawResponse, 'user_need')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'next_action')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'tentative_flow')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'ambiguity')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'evidence_accumulated')\n);\nif (legacyFieldSignals) {\n  issues.push('legacy_understanding_fields_detected');\n}\n\nconst productMatches = [...text.matchAll(/\\b(iphone\\s*\\d+(?:\\s*(?:pro|max|plus|mini))?|samsung\\s*[a-z0-9+ ]+|tecno\\s*[a-z0-9+ ]+|infinix\\s*[a-z0-9+ ]+|redmi\\s*[a-z0-9+ ]+|xiaomi\\s*[a-z0-9+ ]+)\\b/gi)]\n  .map((match) => match[1].trim())\n  .filter(Boolean);\nconst priceMatches = [...text.matchAll(/(?:\\$\\s*\\d+(?:\\.\\d+)?)|(?:\\b\\d{3,6}\\s*(?:birr|etb)\\b)|(?:\\b\\d+[kK]\\b)/g)]\n  .map((match) => match[0].trim())\n  .filter(Boolean);\nconst conditionMatches = [...text.matchAll(/\\b(new|used|sealed|clean|condition)\\b/gi)]\n  .map((match) => match[1].trim().toLowerCase())\n  .filter(Boolean);\nconst ambiguousReferences = [];\nfor (const pattern of ['that one', 'the one', 'cheaper one', 'cheapest', 'first one', 'last one', 'same one', 'this one']) {\n  if (lower.includes(pattern)) ambiguousReferences.push(pattern);\n}\n\nconst classification = normalizeEnum(rawResponse?.message_classification, ['business', 'off_topic', 'small_talk', 'acknowledgment'], {\n  greeting: 'small_talk', greet: 'small_talk', hello: 'small_talk', ack: 'acknowledgment', acknowledgement: 'acknowledgment', offtopic: 'off_topic', 'off-topic': 'off_topic', question: 'business',\n}, 'message_classification');\nconst businessTopic = normalizeEnum(rawResponse?.business_topic, ['product_search', 'pricing', 'stock_check', 'exchange', 'support', 'info_request', null], {\n  search: 'product_search', product: 'product_search', buy: 'product_search', price: 'pricing', pricing_request: 'pricing', stock: 'stock_check', availability: 'stock_check', exchange_inquiry: 'exchange', info: 'info_request', shop_info: 'info_request', faq: 'info_request', none: null, onboarding: null,\n}, 'business_topic');\nconst sentiment = normalizeEnum(rawResponse?.sentiment, ['positive', 'neutral', 'negative', 'playful', 'frustrated'], { upset: 'frustrated', angry: 'frustrated', happy: 'positive', joking: 'playful' }, 'sentiment');\nconst tone = normalizeEnum(rawResponse?.tone, ['casual', 'formal', 'urgent', 'humorous'], { playful: 'humorous', friendly: 'casual' }, 'tone');\n\nconst inferredClassification = acknowledgmentSignal ? 'acknowledgment' : offTopicSignal ? 'off_topic' : (greetingSignal && !productSignal && !pricingSignal && !stockSignal && !exchangeSignal && !infoSignal) ? 'small_talk' : (pricingSignal || stockSignal || exchangeSignal || supportSignal || infoSignal || productSignal) ? 'business' : 'small_talk';\nlet inferredBusinessTopic = null;\nif (pricingSignal) inferredBusinessTopic = 'pricing';\nelse if (stockSignal) inferredBusinessTopic = 'stock_check';\nelse if (exchangeSignal || rawResponse?.user_need === 'exchange_inquiry') inferredBusinessTopic = 'exchange';\nelse if (supportSignal || rawResponse?.tentative_flow === 'support') inferredBusinessTopic = 'support';\nelse if (infoSignal || rawResponse?.tentative_flow === 'faq' || rawResponse?.user_need === 'info_request') inferredBusinessTopic = 'info_request';\nelse if (productSignal || productMatches.length > 0 || rawResponse?.user_need === 'recommendation' || rawResponse?.user_need === 'transaction') inferredBusinessTopic = 'product_search';\n\nconst confidenceSource = Number(rawResponse?.confidence);\nlet confidence = Number.isFinite(confidenceSource) ? clamp(confidenceSource, 0, 1) : (inferredClassification === 'acknowledgment' ? 0.97 : inferredClassification === 'small_talk' ? 0.92 : inferredClassification === 'off_topic' ? 0.9 : inferredBusinessTopic ? 0.82 : 0.45);\nif (String(rawResponse?.ambiguity ?? '').toLowerCase() === 'high') confidence = clamp(confidence - 0.25, 0, 1);\n\nconst understanding_output = {\n  message_classification: classification ?? inferredClassification,\n  business_topic: classification === 'business' || inferredClassification === 'business' ? (businessTopic !== undefined ? businessTopic : inferredBusinessTopic) : (businessTopic === undefined ? null : businessTopic),\n  sentiment: sentiment ?? (frustratedSignal ? 'frustrated' : humorousSignal ? 'playful' : negativeSignal ? 'negative' : 'neutral'),\n  tone: tone ?? (urgentSignal ? 'urgent' : humorousSignal ? 'humorous' : formalSignal ? 'formal' : 'casual'),\n  entities_detected: {\n    product_mentions: (() => { const values = toStringArray(rawResponse?.entities_detected?.product_mentions); return values.length > 0 ? values : productMatches.slice(0, 4); })(),\n    price_mentions: (() => { const values = toStringArray(rawResponse?.entities_detected?.price_mentions); return values.length > 0 ? values : priceMatches.slice(0, 4); })(),\n    condition_mentions: (() => { const values = toStringArray(rawResponse?.entities_detected?.condition_mentions).map((item) => item.toLowerCase()); return values.length > 0 ? values : conditionMatches.slice(0, 4); })(),\n    ambiguous_references: (() => { const values = toStringArray(rawResponse?.entities_detected?.ambiguous_references).map((item) => item.toLowerCase()); return values.length > 0 ? values : ambiguousReferences.slice(0, 4); })(),\n  },\n  extracted_need: typeof rawResponse?.extracted_need === 'string' && rawResponse.extracted_need.trim() ? rawResponse.extracted_need.trim() : (text || 'empty_message'),\n  confidence,\n  reasoning: typeof rawResponse?.reasoning === 'string' && rawResponse.reasoning.trim() ? rawResponse.reasoning.trim() : 'guard_inferred_from_runtime_context',\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    understanding_meta: {\n      valid: issues.length === 0,\n      issues,\n      parsed_source: rawResponse,\n      timestamp: Date.now(),\n    },\n  },\n}];"
+      },
+      "id": "validation-node",
+      "name": "Understanding JSON Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst understanding_meta = input.understanding_meta && typeof input.understanding_meta === 'object' ? input.understanding_meta : {};\nconst text = String(event.text ?? '').trim();\nconst ambiguousReferences = Array.isArray(understanding_output.entities_detected?.ambiguous_references)\n  ? understanding_output.entities_detected.ambiguous_references.filter((item) => typeof item === 'string' && item.trim())\n  : [];\nconst shownProductsRaw = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products\n  : [];\nconst currentInterest = session.flow_context?.buy_flow?.current_interest ?? null;\nconst currentFlow = session.conversation_state?.current_flow ?? null;\n\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') return { id: String(value), name: null, price: null, raw: value, index };\n  if (typeof value !== 'object') return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('option_' + index)),\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || value.name || value.title || null,\n    price: Number.isFinite(Number(priceValue)) ? Number(priceValue) : null,\n    raw: value,\n    index,\n  };\n};\nconst shownProducts = shownProductsRaw.map(normalizeProduct).filter(Boolean);\n\nconst resolveAmbiguousReference = () => {\n  if (ambiguousReferences.length === 0) return { confidence: 0, resolved_reference: null, resolved_product_name: null, ambiguous_reference: null };\n  const label = ambiguousReferences[0].toLowerCase();\n  const byCheapest = [...shownProducts].filter((item) => item.price !== null).sort((a, b) => a.price - b.price)[0] ?? null;\n  const byLast = shownProducts[shownProducts.length - 1] ?? normalizeProduct(currentInterest, shownProducts.length + 1);\n  const byFirst = shownProducts[0] ?? null;\n  let chosen = null;\n  if (label.includes('cheaper') || label.includes('cheapest')) chosen = byCheapest;\n  else if (label.includes('first')) chosen = byFirst;\n  else if (label.includes('last')) chosen = byLast;\n  else if (label.includes('that one') || label.includes('the one') || label.includes('this one') || label.includes('same one')) chosen = normalizeProduct(currentInterest, shownProducts.length + 2) ?? byLast;\n  return { confidence: chosen ? 0.85 : 0.35, resolved_reference: chosen ? { id: chosen.id, raw: chosen.raw } : null, resolved_product_name: chosen?.name ?? null, ambiguous_reference: label };\n};\nconst inferFlow = () => {\n  const topic = understanding_output.business_topic ?? null;\n  if (topic === 'exchange') return 'exchange';\n  if (topic === 'info_request') return 'info';\n  if (topic === 'support') return 'support';\n  if (topic === 'product_search' || topic === 'pricing' || topic === 'stock_check') return 'buy';\n  return null;\n};\n\nconst referenceResolution = resolveAmbiguousReference();\nconst inferredFlow = inferFlow();\nconst productMentions = Array.isArray(understanding_output.entities_detected?.product_mentions)\n  ? understanding_output.entities_detected.product_mentions.filter((item) => typeof item === 'string' && item.trim())\n  : [];\n\nlet rules_output = {\n  reply_mode: 'small_talk_redirect',\n  should_call_resolver: false,\n  resolver_input: { flow: null, product_context: null, missing_fields: [], resolved_reference: null, resolved_product_name: null },\n  session_update: {\n    last_topic: understanding_output.business_topic ?? understanding_output.message_classification ?? null,\n    flow_stage: currentFlow,\n    ambiguous_reference: referenceResolution.ambiguous_reference,\n    resolved_ambiguity: Boolean(referenceResolution.resolved_reference),\n  },\n  confidence: typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0,\n  reasoning: 'default_small_talk_redirect',\n};\n\nconst classification = understanding_output.message_classification ?? 'small_talk';\nconst sentiment = understanding_output.sentiment ?? 'neutral';\n\nif (event.event_type === 'start_reset') {\n  rules_output = { ...rules_output, reply_mode: 'small_talk_redirect', should_call_resolver: false, reasoning: 'start_reset_welcome', session_update: { ...rules_output.session_update, last_topic: null, flow_stage: null, ambiguous_reference: null, resolved_ambiguity: false } };\n} else if (event.event_type === 'deep_link_start') {\n  rules_output = { ...rules_output, reply_mode: 'business_resolve', should_call_resolver: true, resolver_input: { flow: 'buy', product_context: text || null, missing_fields: [], resolved_reference: null, resolved_product_name: productMentions[0] ?? null }, session_update: { ...rules_output.session_update, last_topic: 'product_search', flow_stage: 'buy' }, reasoning: 'deep_link_start_business_entry' };\n} else if (typeof understanding_output.confidence !== 'number' || understanding_output.confidence < 0.6) {\n  rules_output = { ...rules_output, reply_mode: 'handoff_admin', should_call_resolver: false, reasoning: 'low_understanding_confidence' };\n} else if (classification === 'acknowledgment') {\n  rules_output = { ...rules_output, reply_mode: 'acknowledge_and_close', should_call_resolver: false, reasoning: 'acknowledgment_detected' };\n} else if (classification === 'small_talk' || classification === 'off_topic') {\n  const reply_mode = sentiment === 'frustrated' ? 'handoff_admin' : ((sentiment === 'playful' || understanding_output.tone === 'humorous') ? 'small_talk_redirect' : (classification === 'small_talk' ? 'small_talk_redirect' : 'off_topic_redirect'));\n  rules_output = { ...rules_output, reply_mode, should_call_resolver: false, reasoning: classification + '_handled_without_resolver' };\n} else if (classification === 'business') {\n  const productContext = productMentions[0] ?? currentInterest ?? null;\n  const missingFields = inferredFlow === 'buy' && !productContext && !referenceResolution.resolved_reference ? ['product_context'] : [];\n  if (ambiguousReferences.length > 0) {\n    if (referenceResolution.confidence >= 0.8) {\n      rules_output = { ...rules_output, reply_mode: 'business_resolve', should_call_resolver: true, resolver_input: { flow: inferredFlow, product_context: productContext, missing_fields: missingFields, resolved_reference: referenceResolution.resolved_reference, resolved_product_name: referenceResolution.resolved_product_name }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow, ambiguous_reference: referenceResolution.ambiguous_reference, resolved_ambiguity: true }, reasoning: 'ambiguous_reference_resolved_from_session' };\n    } else {\n      rules_output = { ...rules_output, reply_mode: 'clarify_reference', should_call_resolver: false, resolver_input: { ...rules_output.resolver_input, flow: inferredFlow, product_context: productContext }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow, ambiguous_reference: referenceResolution.ambiguous_reference, resolved_ambiguity: false }, reasoning: 'ambiguous_reference_needs_clarification' };\n    }\n  } else if (inferredFlow && currentFlow && inferredFlow === currentFlow) {\n    rules_output = { ...rules_output, reply_mode: 'resume_previous_flow', should_call_resolver: true, resolver_input: { flow: inferredFlow, product_context: productContext, missing_fields: missingFields, resolved_reference: null, resolved_product_name: productMentions[0] ?? null }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow }, reasoning: 'continues_existing_flow' };\n  } else {\n    rules_output = { ...rules_output, reply_mode: 'business_resolve', should_call_resolver: true, resolver_input: { flow: inferredFlow, product_context: productContext, missing_fields: missingFields, resolved_reference: null, resolved_product_name: productMentions[0] ?? null }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow }, reasoning: 'business_request_ready_for_resolver' };\n  }\n}\n\nreturn [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];"
+      },
+      "id": "rules-layer",
+      "name": "Rules Layer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst rules_output = input.rules_output && typeof input.rules_output === 'object' ? input.rules_output : {};\nconst resolverInput = rules_output.resolver_input && typeof rules_output.resolver_input === 'object' ? rules_output.resolver_input : {};\n\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return { id: String(value), brand: null, model: null, price_etb: null, storage: null, condition: null, stock_status: null };\n  }\n  if (typeof value !== 'object') return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: value.brand ?? null,\n    model: value.model ?? value.name ?? value.title ?? null,\n    price_etb: Number.isFinite(Number(priceValue)) ? Number(priceValue) : null,\n    storage: value.storage ?? null,\n    condition: value.condition ?? null,\n    stock_status: value.stock_status ?? null,\n  };\n};\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 10);\nconst requestedName = typeof resolverInput.resolved_product_name === 'string' && resolverInput.resolved_product_name.trim()\n  ? resolverInput.resolved_product_name.trim().toLowerCase()\n  : null;\nlet selectedProduct = null;\nif (resolverInput.resolved_reference?.id) {\n  selectedProduct = shownProducts.find((product) => product.id === resolverInput.resolved_reference.id) ?? null;\n}\nif (!selectedProduct && requestedName) {\n  selectedProduct = shownProducts.find((product) => {\n    const name = [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\n    return Boolean(name) && name === requestedName;\n  }) ?? null;\n}\nif (!selectedProduct && currentInterest) {\n  selectedProduct = currentInterest;\n}\n\nconst products = selectedProduct ? [selectedProduct] : shownProducts.slice(0, 3);\nconst numericPrices = products.map((product) => product.price_etb).filter((value) => Number.isFinite(value));\nconst priceRange = numericPrices.length > 0 ? { min: Math.min(...numericPrices), max: Math.max(...numericPrices) } : null;\nlet result_type = 'no_match';\nlet next_step = 'ask_clarification';\nlet exchange_context = null;\n\nif (rules_output.reply_mode === 'clarify_reference') {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n} else if (resolverInput.flow === 'exchange') {\n  result_type = 'exchange_offer';\n  next_step = 'ask_clarification';\n  exchange_context = { current_interest: session.flow_context?.buy_flow?.current_interest ?? null, extracted_need: understanding_output.extracted_need ?? null };\n} else if (selectedProduct) {\n  result_type = 'single_product';\n  next_step = 'show_single';\n} else if (products.length > 1) {\n  result_type = 'multiple_options';\n  next_step = 'show_options';\n} else if ((resolverInput.missing_fields ?? []).length > 0) {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n}\n\nconst resolver_output = {\n  result_type,\n  products,\n  exchange_context,\n  next_step,\n  facts_for_reply: {\n    product_found: Boolean(selectedProduct || products.length > 0),\n    how_many_options: products.length,\n    stock_status: selectedProduct?.stock_status ?? null,\n    price_range: priceRange,\n  },\n};\n\nreturn [{ json: { event, session, client_config, understanding_output, rules_output, resolver_output } }];"
+      },
+      "id": "business-data-resolver",
+      "name": "Business Data Resolver",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0.15,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 2 Reply AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object with exactly this shape: {\\\"reply_text\\\":\\\"string\\\"}.\\\\nDo not add any other keys. Do not explain anything. Do not add markdown fences.\\\\nUse only the provided customer_text, understanding_output, rules_output, resolver_output, reply_context, last_messages, and client_config.\\\\nNever invent stock, price, warranty, availability, delivery, location, or shop facts.\\\\nKeep the reply to max 3 short lines.\\\\nDefault to natural Amharic in Ethiopic script for conversation.\\\\nUse English only for brand, model, storage, and product names where natural.\\\\nDo not produce awkward English-Amharic transliteration.\\\\nDo not use vague words like technology, electronics, gadgets, or accessories unless the customer explicitly asks for them.\\\\nPrefer wording around phone, mobile, model, exchange, shop, price, and availability.\\\\nOne emoji max, and only when the tone is playful.\\\\nStrict continuity rules:\\\\n- If reply_context.should_greet is false, never greet, never welcome, and never reopen with a seller introduction.\\\\n- Only greet on explicit restart or the first meaningful turn of a new conversation.\\\\n- If reply_context.has_active_context is true, continue that context instead of asking a generic buying-or-exchange question.\\\\n- If the user message is clear, respond to that exact message and do not replace it with a generic opening.\\\\n- If current_flow or current_topic exists, use it to continue the thread.\\\\nStrict reply mode rules:\\\\n- acknowledge_and_close: short close only, no question, no greeting.\\\\n- off_topic_redirect: short redirect only, one gentle question max, no greeting.\\\\n- small_talk_redirect: short natural acknowledgment plus one phone-related next step, no repeated welcome.\\\\n- clarify_reference: ask which one the customer means, no product facts, no generic reopening.\\\\n- resume_previous_flow: continue the previous thread directly, no restart behavior.\\\\n- business_resolve: use resolver facts only. If resolver facts are weak, ask one narrow follow-up tied to the actual customer text or current context.\\\\n- handoff_admin: brief reassurance only, no question, no greeting.\\\\nNarrow clarification rules:\\\\n- Do not ask buying-or-exchange unless intent is truly unclear and there is no useful session context.\\\\n- If the customer asked about price, ask a narrow follow-up about the model or brand if needed.\\\\n- If the customer asked available?, use the current item or current flow if present; do not reopen from zero.\\\\n- If the customer said that one or cheaper one, stay in reference clarification or prior-context continuation; do not reopen with a catalog greeting.\\\\nStyle rules:\\\\n- Sound like a practical Ethiopian phone seller on Telegram.\\\\n- Be short, direct, natural, and sales-aware.\\\\n- No robotic assistant phrasing.\\\\n- No broad onboarding copy unless this is truly a new conversation.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        understanding_output: $json.understanding_output ?? null,\n        rules_output: $json.rules_output ?? null,\n        resolver_output: $json.resolver_output ?? null,\n        reply_context: {\n          event_type: $json.event?.event_type ?? null,\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          message_count: Number($json.session?.message_count ?? 0),\n          history_count: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.length : 0,\n          has_active_context: Boolean(\n            ($json.session?.conversation_state?.current_flow ?? null)\n            || ($json.session?.conversation_state?.current_topic ?? null)\n            || (Array.isArray($json.session?.conversation_history) && $json.session.conversation_history.length > 0)\n            || (Array.isArray($json.session?.flow_context?.buy_flow?.shown_products) && $json.session.flow_context.buy_flow.shown_products.length > 0)\n            || $json.session?.flow_context?.buy_flow?.current_interest\n          ),\n          should_greet: Boolean(\n            ($json.event?.event_type === 'start_reset')\n            || (\n              Number($json.session?.message_count ?? 0) === 0\n              && (!Array.isArray($json.session?.conversation_history) || $json.session.conversation_history.length === 0)\n              && !$json.session?.conversation_state?.current_flow\n              && !$json.session?.conversation_state?.current_topic\n            )\n          ),\n        },\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-3) : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+        "options": {}
+      },
+      "id": "reply-ai",
+      "name": "Reply AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let base = {};\ntry {\n  base = $item(0).$node['Business Data Resolver'].json ?? {};\n} catch {\n  base = {};\n}\nif (!base.rules_output) {\n  try {\n    base = $item(0).$node['Rules Layer'].json ?? base;\n  } catch {}\n}\nconst replyPayload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst understanding_output = base.understanding_output && typeof base.understanding_output === 'object' ? base.understanding_output : {};\nconst rules_output = base.rules_output && typeof base.rules_output === 'object' ? base.rules_output : {};\nconst resolver_output = base.resolver_output && typeof base.resolver_output === 'object' ? base.resolver_output : null;\nconst issues = [];\n\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (typeof value === 'object' && !Array.isArray(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\n\nconst parsedReply = parseJsonObject(replyPayload.choices?.[0]?.message?.content)\n  || parseJsonObject(replyPayload.output_text)\n  || parseJsonObject(replyPayload.text)\n  || parseJsonObject(replyPayload.data)\n  || parseJsonObject(replyPayload.result)\n  || parseJsonObject(replyPayload);\n\nconst reply_text = typeof parsedReply?.reply_text === 'string' ? parsedReply.reply_text.trim() : '';\nif (!reply_text) issues.push('missing_reply_text');\nconst lineCount = reply_text ? reply_text.split(/\\r?\\n/).filter((line) => line.trim()).length : 0;\nif (lineCount > 3) issues.push('reply_exceeds_max_lines');\nif (rules_output.reply_mode === 'acknowledge_and_close' && /[?]/.test(reply_text)) issues.push('acknowledge_and_close_should_not_ask_question');\nif (rules_output.reply_mode === 'handoff_admin' && /[?]/.test(reply_text)) issues.push('handoff_admin_should_not_ask_question');\nif (rules_output.should_call_resolver && !resolver_output) issues.push('resolver_expected_but_missing');\nif (!rules_output.should_call_resolver && rules_output.reply_mode === 'business_resolve') issues.push('business_resolve_requires_resolver');\nif (rules_output.reply_mode === 'business_resolve' && resolver_output && !['single_product', 'multiple_options', 'no_match', 'out_of_stock', 'clarification_needed', 'exchange_offer'].includes(resolver_output.result_type)) issues.push('invalid_resolver_result_type');\nif (!['business_resolve', 'off_topic_redirect', 'small_talk_redirect', 'clarify_reference', 'resume_previous_flow', 'acknowledge_and_close', 'handoff_admin'].includes(rules_output.reply_mode)) issues.push('invalid_reply_mode_contract');\n\nconst valid = issues.length === 0;\nconst safe_to_send = valid && Boolean(reply_text);\nconst now = Date.now();\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst nextHistory = history.concat([{ role: 'user', text: String(event.text ?? ''), timestamp: Number.isFinite(Number(event.timestamp)) ? Number(event.timestamp) : now }]).concat(safe_to_send ? [{ role: 'assistant', text: reply_text, timestamp: now }] : []).slice(-12);\n\nconst shownProducts = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length > 0\n  ? resolver_output.products\n  : (Array.isArray(session.flow_context?.buy_flow?.shown_products) ? session.flow_context.buy_flow.shown_products : []);\nconst currentInterest = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length === 1\n  ? resolver_output.products[0]\n  : (rules_output.resolver_input?.resolved_product_name ?? session.flow_context?.buy_flow?.current_interest ?? null);\nconst flow = rules_output.resolver_input?.flow ?? session.conversation_state?.current_flow ?? null;\nconst updatedSession = {\n  session_id: String(session.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(session.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(session.created_at)) ? Number(session.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, Number(session.message_count ?? 0)) + 1,\n  conversation_state: {\n    current_topic: rules_output.session_update?.last_topic ?? session.conversation_state?.current_topic ?? null,\n    current_flow: flow,\n    is_active: rules_output.reply_mode !== 'acknowledge_and_close',\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  conversation_history: nextHistory,\n  admin_escalation: rules_output.reply_mode === 'handoff_admin'\n    ? { required: true, reason: rules_output.reasoning ?? 'handoff_admin', status: 'pending' }\n    : (session.admin_escalation && typeof session.admin_escalation === 'object' ? session.admin_escalation : { required: false, reason: null, status: null }),\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    rules_output,\n    resolver_output,\n    reply_text,\n    valid,\n    issues,\n    safe_to_send,\n    telegram_payload: { chat_id: event.chatId ?? null, text: reply_text },\n    session_update_payload: { userId: event.userId ?? null, chatId: event.chatId ?? null, session: updatedSession },\n    validation_meta: { parsed_reply: parsedReply, timestamp: now },\n  },\n}];"
+      },
+      "id": "side-effects",
+      "name": "Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.event.chatId }}",
+        "action": "typing"
+      },
+      "id": "telegram-typing",
+      "name": "Telegram Typing",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        800,
+        180
+      ],
+      "webhookId": "0a9da8c1-e60c-4c8b-8bc0-ea41d939223f"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $item(0).$node['Validation'].json.telegram_payload.chat_id }}",
+        "text": "={{ $item(0).$node['Validation'].json.reply_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "telegram-send",
+      "name": "Telegram Send",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        3200,
+        300
+      ],
+      "webhookId": "f8a344d2-7070-4b2b-9ebe-6f0baa4d2d63"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($item(0).$node['Validation'].json.session_update_payload) }}",
+        "options": {}
+      },
+      "id": "session-save",
+      "name": "Session Save",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9fbfb8f2-af27-4229-a0dd-78a7248d5fcc",
+              "leftValue": "={{ $json.rules_output.should_call_resolver }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "6cf3b3b0-ecc7-4b84-8cf2-885d6188a469",
+      "name": "Should Resolve",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2b7c4a7e-5945-4c2a-a27a-cff69a7ca7a4",
+              "leftValue": "={{ $json.safe_to_send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "de4bc6fc-cd00-4ba0-b3c9-d5ecb82c5309",
+      "name": "Safe To Send",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2960,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Input": {
+      "main": [
+        [
+          {
+            "node": "Event Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Session Load",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Typing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Load": {
+      "main": [
+        [
+          {
+            "node": "Session Bootstrap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Bootstrap": {
+      "main": [
+        [
+          {
+            "node": "Understanding AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Understanding AI": {
+      "main": [
+        [
+          {
+            "node": "Understanding JSON Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Understanding JSON Guard": {
+      "main": [
+        [
+          {
+            "node": "Rules Layer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rules Layer": {
+      "main": [
+        [
+          {
+            "node": "Should Resolve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Resolve": {
+      "main": [
+        [
+          {
+            "node": "Business Data Resolver",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Data Resolver": {
+      "main": [
+        [
+          {
+            "node": "Reply AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply AI": {
+      "main": [
+        [
+          {
+            "node": "Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation": {
+      "main": [
+        [
+          {
+            "node": "Safe To Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Safe To Send": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Session Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send": {
+      "main": [
+        [
+          {
+            "node": "Session Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "07b4f945-022d-4ddd-92b3-d75701a34e13",
+  "activeVersionId": "07b4f945-022d-4ddd-92b3-d75701a34e13",
+  "versionCounter": 44,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-02T17:36:18.951Z",
+      "createdAt": "2026-04-02T17:36:18.951Z",
+      "role": "workflow:owner",
+      "workflowId": "hc55q2zfas7gG1yu",
+      "projectId": "Fk6QzHiE8AwQnJYG",
+      "project": {
+        "updatedAt": "2026-04-02T17:28:20.518Z",
+        "createdAt": "2026-04-02T17:25:40.291Z",
+        "id": "Fk6QzHiE8AwQnJYG",
+        "name": "Abenezer Tadiyos  <babig7633@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-04-02T20:59:41.771Z",
+    "createdAt": "2026-04-02T20:59:41.771Z",
+    "versionId": "07b4f945-022d-4ddd-92b3-d75701a34e13",
+    "workflowId": "hc55q2zfas7gG1yu",
+    "nodes": [
+      {
+        "parameters": {
+          "updates": [
+            "message",
+            "callback_query"
+          ],
+          "additionalFields": {}
+        },
+        "id": "telegram-input",
+        "name": "Telegram Input",
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1,
+        "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          320,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+        },
+        "id": "event-normalizer",
+        "name": "Event Normalizer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "{\n  \"userId\": \"={{ $json.event.userId }}\",\n  \"chatId\": \"={{ $json.event.chatId }}\"\n}",
+          "options": {}
+        },
+        "id": "session-load",
+        "name": "Session Load",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          800,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nif (!event) {\n  try {\n    event = $item(0).$node['Event Normalizer'].json.event;\n  } catch {\n    event = null;\n  }\n}\n\nevent = event && typeof event === 'object' ? event : {};\nconst remoteEnvelope = payload.session && typeof payload.session === 'object'\n  ? payload.session\n  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);\nconst remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')\n  ? remoteEnvelope.data\n  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);\nconst existing = remoteData && typeof remoteData === 'object' ? remoteData : {};\nconst now = Date.now();\nconst history = Array.isArray(existing.conversation_history)\n  ? existing.conversation_history\n  : (Array.isArray(existing.message_history) ? existing.message_history : []);\nconst shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)\n  ? existing.flow_context.buy_flow.shown_products\n  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);\nconst currentInterest = existing.flow_context?.buy_flow?.current_interest\n  ?? existing.active_product_id\n  ?? existing.selected_option\n  ?? null;\nconst currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;\nconst currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;\nconst active = existing.conversation_state?.is_active;\nconst baseCount = Number.isFinite(Number(existing.message_count))\n  ? Number(existing.message_count)\n  : history.filter((item) => item && typeof item === 'object').length;\nconst session = {\n  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(existing.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, baseCount),\n  conversation_state: {\n    current_topic: currentTopic,\n    current_flow: currentFlow,\n    is_active: typeof active === 'boolean' ? active : true,\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  conversation_history: history.slice(-12).filter((item) => item && typeof item === 'object'),\n  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'\n    ? {\n        required: Boolean(existing.admin_escalation.required),\n        reason: existing.admin_escalation.reason ?? null,\n        status: existing.admin_escalation.status ?? null,\n      }\n    : {\n        required: false,\n        reason: null,\n        status: null,\n      },\n};\nconst client_config = {\n  \"store_name\": \"TedyTech\",\n  \"default_language\": \"am\",\n  \"supports_exchange\": true,\n  \"supports_finance\": false,\n  \"telegram_bot_name\": \"TedyTech Bot\"\n};\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',\n  },\n}];"
+        },
+        "id": "session-bootstrap",
+        "name": "Session Bootstrap",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1040,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 1 Understanding AI for the TedyTech Telegram bot.\\nReturn ONLY one valid JSON object. No markdown. No explanation. No extra text.\\nDo not generate any reply text. Do not output workflow actions beyond the required schema.\\nDo not output old fields such as user_need, next_action, tentative_flow, ambiguity, or evidence_accumulated.\\nUse exactly this schema:\\n{\\n  \\\"message_classification\\\": \\\"business | off_topic | small_talk | acknowledgment\\\",\\n  \\\"business_topic\\\": \\\"product_search | pricing | stock_check | exchange | support | info_request | null\\\",\\n  \\\"sentiment\\\": \\\"positive | neutral | negative | playful | frustrated\\\",\\n  \\\"tone\\\": \\\"casual | formal | urgent | humorous\\\",\\n  \\\"entities_detected\\\": {\\n    \\\"product_mentions\\\": [],\\n    \\\"price_mentions\\\": [],\\n    \\\"condition_mentions\\\": [],\\n    \\\"ambiguous_references\\\": []\\n  },\\n  \\\"extracted_need\\\": \\\"string\\\",\\n  \\\"confidence\\\": 0.0,\\n  \\\"reasoning\\\": \\\"string\\\"\\n}\\nAllowed few-shot examples:\\nUser: \\\"selam\\\" -> {\\\"message_classification\\\":\\\"small_talk\\\",\\\"business_topic\\\":null,\\\"sentiment\\\":\\\"positive\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"greeting\\\",\\\"confidence\\\":0.95,\\\"reasoning\\\":\\\"simple greeting\\\"}\\nUser: \\\"adis slk falige\\\" -> {\\\"message_classification\\\":\\\"business\\\",\\\"business_topic\\\":\\\"product_search\\\",\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"looking for a new phone\\\",\\\"confidence\\\":0.86,\\\"reasoning\\\":\\\"buy intent without model\\\"}\\nUser: \\\"I want exchange\\\" -> {\\\"message_classification\\\":\\\"business\\\",\\\"business_topic\\\":\\\"exchange\\\",\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"wants phone exchange\\\",\\\"confidence\\\":0.9,\\\"reasoning\\\":\\\"clear exchange intent\\\"}\\nUser: \\\"where is your shop\\\" -> {\\\"message_classification\\\":\\\"business\\\",\\\"business_topic\\\":\\\"info_request\\\",\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"asks for store information\\\",\\\"confidence\\\":0.93,\\\"reasoning\\\":\\\"store information request\\\"}\\nUser: \\\"ok thanks\\\" -> {\\\"message_classification\\\":\\\"acknowledgment\\\",\\\"business_topic\\\":null,\\\"sentiment\\\":\\\"positive\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"acknowledges previous answer\\\",\\\"confidence\\\":0.97,\\\"reasoning\\\":\\\"closing acknowledgment\\\"}\\nUser: \\\"weather today\\\" -> {\\\"message_classification\\\":\\\"off_topic\\\",\\\"business_topic\\\":null,\\\"sentiment\\\":\\\"neutral\\\",\\\"tone\\\":\\\"casual\\\",\\\"entities_detected\\\":{\\\"product_mentions\\\":[],\\\"price_mentions\\\":[],\\\"condition_mentions\\\":[],\\\"ambiguous_references\\\":[]},\\\"extracted_need\\\":\\\"asks about weather\\\",\\\"confidence\\\":0.98,\\\"reasoning\\\":\\\"off-topic request\\\"}\\nIf the latest message says things like \\\"that one\\\", \\\"the one\\\", \\\"cheaper one\\\", \\\"first one\\\", or \\\"last one\\\", record that phrase inside entities_detected.ambiguous_references.\\nConfidence must be between 0 and 1.\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        client_config: $json.client_config,\n        event: $json.event,\n        session: $json.session,\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-8) : [],\n      }),\n    },\n  ],\n}) }}",
+          "options": {}
+        },
+        "id": "understanding-ai",
+        "name": "Understanding AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1280,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const base = (() => {\n  try {\n    return $item(0).$node['Session Bootstrap'].json ?? {};\n  } catch {\n    return {};\n  }\n})();\nconst payload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst issues = [];\n\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (typeof value === 'object' && !Array.isArray(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\n\nconst rawResponse = parseJsonObject(payload.choices?.[0]?.message?.content)\n  || parseJsonObject(payload.output_text)\n  || parseJsonObject(payload.text)\n  || parseJsonObject(payload.data)\n  || parseJsonObject(payload.result)\n  || parseJsonObject(payload);\nif (!rawResponse) {\n  issues.push('understanding_response_not_parseable');\n}\n\nconst text = String(event.text ?? '').trim();\nconst lower = text.toLowerCase();\nconst hasAny = (tokens) => tokens.some((token) => lower.includes(token));\nconst clamp = (value, min, max) => Math.min(max, Math.max(min, value));\nconst toStringArray = (value) => Array.isArray(value)\n  ? value.filter((item) => typeof item === 'string').map((item) => item.trim()).filter(Boolean)\n  : [];\nconst normalizeEnum = (value, allowed, synonyms, label) => {\n  if (value === null && allowed.includes(null)) return null;\n  if (typeof value === 'string') {\n    const normalized = synonyms[String(value).trim().toLowerCase()] ?? String(value).trim().toLowerCase();\n    if (allowed.includes(normalized)) return normalized;\n    issues.push(label + '_invalid:' + value);\n  }\n  return undefined;\n};\n\nconst greetingSignal = hasAny(['selam', 'hello', 'hi', 'hey', 'good morning', 'good evening']);\nconst acknowledgmentSignal = hasAny(['ok', 'okay', 'thanks', 'thank you', 'got it', 'noted']);\nconst offTopicSignal = hasAny(['weather', 'football', 'soccer', 'movie', 'music', 'joke', 'news', 'time', 'sleep']);\nconst pricingSignal = hasAny(['price', 'how much', 'cost', 'budget', 'last price']);\nconst stockSignal = hasAny(['available', 'availability', 'in stock', 'stock']);\nconst exchangeSignal = hasAny(['exchange', 'swap', 'trade', 'trade in']);\nconst supportSignal = hasAny(['problem', 'issue', 'complaint', 'support', 'help']);\nconst infoSignal = hasAny(['where', 'location', 'address', 'shop', 'store', 'hours', 'payment', 'warranty', 'delivery', 'policy']);\nconst productSignal = hasAny(['phone', 'iphone', 'samsung', 'tecno', 'infinix', 'redmi', 'xiaomi', 'pixel', 'model', 'slk', 'buy', 'want']);\nconst humorousSignal = hasAny(['haha', 'lol', 'lmao']);\nconst urgentSignal = hasAny(['urgent', 'asap', 'quick', 'immediately']);\nconst formalSignal = hasAny(['please', 'kindly']);\nconst negativeSignal = hasAny(['bad', 'terrible', 'angry', 'annoyed']);\nconst frustratedSignal = hasAny(['frustrated', 'upset', 'fed up']) || (negativeSignal && supportSignal);\n\nconst legacyFieldSignals = rawResponse && typeof rawResponse === 'object' && (\n  Object.prototype.hasOwnProperty.call(rawResponse, 'user_need')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'next_action')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'tentative_flow')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'ambiguity')\n  || Object.prototype.hasOwnProperty.call(rawResponse, 'evidence_accumulated')\n);\nif (legacyFieldSignals) {\n  issues.push('legacy_understanding_fields_detected');\n}\n\nconst productMatches = [...text.matchAll(/\\b(iphone\\s*\\d+(?:\\s*(?:pro|max|plus|mini))?|samsung\\s*[a-z0-9+ ]+|tecno\\s*[a-z0-9+ ]+|infinix\\s*[a-z0-9+ ]+|redmi\\s*[a-z0-9+ ]+|xiaomi\\s*[a-z0-9+ ]+)\\b/gi)]\n  .map((match) => match[1].trim())\n  .filter(Boolean);\nconst priceMatches = [...text.matchAll(/(?:\\$\\s*\\d+(?:\\.\\d+)?)|(?:\\b\\d{3,6}\\s*(?:birr|etb)\\b)|(?:\\b\\d+[kK]\\b)/g)]\n  .map((match) => match[0].trim())\n  .filter(Boolean);\nconst conditionMatches = [...text.matchAll(/\\b(new|used|sealed|clean|condition)\\b/gi)]\n  .map((match) => match[1].trim().toLowerCase())\n  .filter(Boolean);\nconst ambiguousReferences = [];\nfor (const pattern of ['that one', 'the one', 'cheaper one', 'cheapest', 'first one', 'last one', 'same one', 'this one']) {\n  if (lower.includes(pattern)) ambiguousReferences.push(pattern);\n}\n\nconst classification = normalizeEnum(rawResponse?.message_classification, ['business', 'off_topic', 'small_talk', 'acknowledgment'], {\n  greeting: 'small_talk', greet: 'small_talk', hello: 'small_talk', ack: 'acknowledgment', acknowledgement: 'acknowledgment', offtopic: 'off_topic', 'off-topic': 'off_topic', question: 'business',\n}, 'message_classification');\nconst businessTopic = normalizeEnum(rawResponse?.business_topic, ['product_search', 'pricing', 'stock_check', 'exchange', 'support', 'info_request', null], {\n  search: 'product_search', product: 'product_search', buy: 'product_search', price: 'pricing', pricing_request: 'pricing', stock: 'stock_check', availability: 'stock_check', exchange_inquiry: 'exchange', info: 'info_request', shop_info: 'info_request', faq: 'info_request', none: null, onboarding: null,\n}, 'business_topic');\nconst sentiment = normalizeEnum(rawResponse?.sentiment, ['positive', 'neutral', 'negative', 'playful', 'frustrated'], { upset: 'frustrated', angry: 'frustrated', happy: 'positive', joking: 'playful' }, 'sentiment');\nconst tone = normalizeEnum(rawResponse?.tone, ['casual', 'formal', 'urgent', 'humorous'], { playful: 'humorous', friendly: 'casual' }, 'tone');\n\nconst inferredClassification = acknowledgmentSignal ? 'acknowledgment' : offTopicSignal ? 'off_topic' : (greetingSignal && !productSignal && !pricingSignal && !stockSignal && !exchangeSignal && !infoSignal) ? 'small_talk' : (pricingSignal || stockSignal || exchangeSignal || supportSignal || infoSignal || productSignal) ? 'business' : 'small_talk';\nlet inferredBusinessTopic = null;\nif (pricingSignal) inferredBusinessTopic = 'pricing';\nelse if (stockSignal) inferredBusinessTopic = 'stock_check';\nelse if (exchangeSignal || rawResponse?.user_need === 'exchange_inquiry') inferredBusinessTopic = 'exchange';\nelse if (supportSignal || rawResponse?.tentative_flow === 'support') inferredBusinessTopic = 'support';\nelse if (infoSignal || rawResponse?.tentative_flow === 'faq' || rawResponse?.user_need === 'info_request') inferredBusinessTopic = 'info_request';\nelse if (productSignal || productMatches.length > 0 || rawResponse?.user_need === 'recommendation' || rawResponse?.user_need === 'transaction') inferredBusinessTopic = 'product_search';\n\nconst confidenceSource = Number(rawResponse?.confidence);\nlet confidence = Number.isFinite(confidenceSource) ? clamp(confidenceSource, 0, 1) : (inferredClassification === 'acknowledgment' ? 0.97 : inferredClassification === 'small_talk' ? 0.92 : inferredClassification === 'off_topic' ? 0.9 : inferredBusinessTopic ? 0.82 : 0.45);\nif (String(rawResponse?.ambiguity ?? '').toLowerCase() === 'high') confidence = clamp(confidence - 0.25, 0, 1);\n\nconst understanding_output = {\n  message_classification: classification ?? inferredClassification,\n  business_topic: classification === 'business' || inferredClassification === 'business' ? (businessTopic !== undefined ? businessTopic : inferredBusinessTopic) : (businessTopic === undefined ? null : businessTopic),\n  sentiment: sentiment ?? (frustratedSignal ? 'frustrated' : humorousSignal ? 'playful' : negativeSignal ? 'negative' : 'neutral'),\n  tone: tone ?? (urgentSignal ? 'urgent' : humorousSignal ? 'humorous' : formalSignal ? 'formal' : 'casual'),\n  entities_detected: {\n    product_mentions: (() => { const values = toStringArray(rawResponse?.entities_detected?.product_mentions); return values.length > 0 ? values : productMatches.slice(0, 4); })(),\n    price_mentions: (() => { const values = toStringArray(rawResponse?.entities_detected?.price_mentions); return values.length > 0 ? values : priceMatches.slice(0, 4); })(),\n    condition_mentions: (() => { const values = toStringArray(rawResponse?.entities_detected?.condition_mentions).map((item) => item.toLowerCase()); return values.length > 0 ? values : conditionMatches.slice(0, 4); })(),\n    ambiguous_references: (() => { const values = toStringArray(rawResponse?.entities_detected?.ambiguous_references).map((item) => item.toLowerCase()); return values.length > 0 ? values : ambiguousReferences.slice(0, 4); })(),\n  },\n  extracted_need: typeof rawResponse?.extracted_need === 'string' && rawResponse.extracted_need.trim() ? rawResponse.extracted_need.trim() : (text || 'empty_message'),\n  confidence,\n  reasoning: typeof rawResponse?.reasoning === 'string' && rawResponse.reasoning.trim() ? rawResponse.reasoning.trim() : 'guard_inferred_from_runtime_context',\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    understanding_meta: {\n      valid: issues.length === 0,\n      issues,\n      parsed_source: rawResponse,\n      timestamp: Date.now(),\n    },\n  },\n}];"
+        },
+        "id": "validation-node",
+        "name": "Understanding JSON Guard",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1520,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst understanding_meta = input.understanding_meta && typeof input.understanding_meta === 'object' ? input.understanding_meta : {};\nconst text = String(event.text ?? '').trim();\nconst ambiguousReferences = Array.isArray(understanding_output.entities_detected?.ambiguous_references)\n  ? understanding_output.entities_detected.ambiguous_references.filter((item) => typeof item === 'string' && item.trim())\n  : [];\nconst shownProductsRaw = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products\n  : [];\nconst currentInterest = session.flow_context?.buy_flow?.current_interest ?? null;\nconst currentFlow = session.conversation_state?.current_flow ?? null;\n\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') return { id: String(value), name: null, price: null, raw: value, index };\n  if (typeof value !== 'object') return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('option_' + index)),\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || value.name || value.title || null,\n    price: Number.isFinite(Number(priceValue)) ? Number(priceValue) : null,\n    raw: value,\n    index,\n  };\n};\nconst shownProducts = shownProductsRaw.map(normalizeProduct).filter(Boolean);\n\nconst resolveAmbiguousReference = () => {\n  if (ambiguousReferences.length === 0) return { confidence: 0, resolved_reference: null, resolved_product_name: null, ambiguous_reference: null };\n  const label = ambiguousReferences[0].toLowerCase();\n  const byCheapest = [...shownProducts].filter((item) => item.price !== null).sort((a, b) => a.price - b.price)[0] ?? null;\n  const byLast = shownProducts[shownProducts.length - 1] ?? normalizeProduct(currentInterest, shownProducts.length + 1);\n  const byFirst = shownProducts[0] ?? null;\n  let chosen = null;\n  if (label.includes('cheaper') || label.includes('cheapest')) chosen = byCheapest;\n  else if (label.includes('first')) chosen = byFirst;\n  else if (label.includes('last')) chosen = byLast;\n  else if (label.includes('that one') || label.includes('the one') || label.includes('this one') || label.includes('same one')) chosen = normalizeProduct(currentInterest, shownProducts.length + 2) ?? byLast;\n  return { confidence: chosen ? 0.85 : 0.35, resolved_reference: chosen ? { id: chosen.id, raw: chosen.raw } : null, resolved_product_name: chosen?.name ?? null, ambiguous_reference: label };\n};\nconst inferFlow = () => {\n  const topic = understanding_output.business_topic ?? null;\n  if (topic === 'exchange') return 'exchange';\n  if (topic === 'info_request') return 'info';\n  if (topic === 'support') return 'support';\n  if (topic === 'product_search' || topic === 'pricing' || topic === 'stock_check') return 'buy';\n  return null;\n};\n\nconst referenceResolution = resolveAmbiguousReference();\nconst inferredFlow = inferFlow();\nconst productMentions = Array.isArray(understanding_output.entities_detected?.product_mentions)\n  ? understanding_output.entities_detected.product_mentions.filter((item) => typeof item === 'string' && item.trim())\n  : [];\n\nlet rules_output = {\n  reply_mode: 'small_talk_redirect',\n  should_call_resolver: false,\n  resolver_input: { flow: null, product_context: null, missing_fields: [], resolved_reference: null, resolved_product_name: null },\n  session_update: {\n    last_topic: understanding_output.business_topic ?? understanding_output.message_classification ?? null,\n    flow_stage: currentFlow,\n    ambiguous_reference: referenceResolution.ambiguous_reference,\n    resolved_ambiguity: Boolean(referenceResolution.resolved_reference),\n  },\n  confidence: typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0,\n  reasoning: 'default_small_talk_redirect',\n};\n\nconst classification = understanding_output.message_classification ?? 'small_talk';\nconst sentiment = understanding_output.sentiment ?? 'neutral';\n\nif (event.event_type === 'start_reset') {\n  rules_output = { ...rules_output, reply_mode: 'small_talk_redirect', should_call_resolver: false, reasoning: 'start_reset_welcome', session_update: { ...rules_output.session_update, last_topic: null, flow_stage: null, ambiguous_reference: null, resolved_ambiguity: false } };\n} else if (event.event_type === 'deep_link_start') {\n  rules_output = { ...rules_output, reply_mode: 'business_resolve', should_call_resolver: true, resolver_input: { flow: 'buy', product_context: text || null, missing_fields: [], resolved_reference: null, resolved_product_name: productMentions[0] ?? null }, session_update: { ...rules_output.session_update, last_topic: 'product_search', flow_stage: 'buy' }, reasoning: 'deep_link_start_business_entry' };\n} else if (typeof understanding_output.confidence !== 'number' || understanding_output.confidence < 0.6) {\n  rules_output = { ...rules_output, reply_mode: 'handoff_admin', should_call_resolver: false, reasoning: 'low_understanding_confidence' };\n} else if (classification === 'acknowledgment') {\n  rules_output = { ...rules_output, reply_mode: 'acknowledge_and_close', should_call_resolver: false, reasoning: 'acknowledgment_detected' };\n} else if (classification === 'small_talk' || classification === 'off_topic') {\n  const reply_mode = sentiment === 'frustrated' ? 'handoff_admin' : ((sentiment === 'playful' || understanding_output.tone === 'humorous') ? 'small_talk_redirect' : (classification === 'small_talk' ? 'small_talk_redirect' : 'off_topic_redirect'));\n  rules_output = { ...rules_output, reply_mode, should_call_resolver: false, reasoning: classification + '_handled_without_resolver' };\n} else if (classification === 'business') {\n  const productContext = productMentions[0] ?? currentInterest ?? null;\n  const missingFields = inferredFlow === 'buy' && !productContext && !referenceResolution.resolved_reference ? ['product_context'] : [];\n  if (ambiguousReferences.length > 0) {\n    if (referenceResolution.confidence >= 0.8) {\n      rules_output = { ...rules_output, reply_mode: 'business_resolve', should_call_resolver: true, resolver_input: { flow: inferredFlow, product_context: productContext, missing_fields: missingFields, resolved_reference: referenceResolution.resolved_reference, resolved_product_name: referenceResolution.resolved_product_name }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow, ambiguous_reference: referenceResolution.ambiguous_reference, resolved_ambiguity: true }, reasoning: 'ambiguous_reference_resolved_from_session' };\n    } else {\n      rules_output = { ...rules_output, reply_mode: 'clarify_reference', should_call_resolver: false, resolver_input: { ...rules_output.resolver_input, flow: inferredFlow, product_context: productContext }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow, ambiguous_reference: referenceResolution.ambiguous_reference, resolved_ambiguity: false }, reasoning: 'ambiguous_reference_needs_clarification' };\n    }\n  } else if (inferredFlow && currentFlow && inferredFlow === currentFlow) {\n    rules_output = { ...rules_output, reply_mode: 'resume_previous_flow', should_call_resolver: true, resolver_input: { flow: inferredFlow, product_context: productContext, missing_fields: missingFields, resolved_reference: null, resolved_product_name: productMentions[0] ?? null }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow }, reasoning: 'continues_existing_flow' };\n  } else {\n    rules_output = { ...rules_output, reply_mode: 'business_resolve', should_call_resolver: true, resolver_input: { flow: inferredFlow, product_context: productContext, missing_fields: missingFields, resolved_reference: null, resolved_product_name: productMentions[0] ?? null }, session_update: { ...rules_output.session_update, flow_stage: inferredFlow }, reasoning: 'business_request_ready_for_resolver' };\n  }\n}\n\nreturn [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];"
+        },
+        "id": "rules-layer",
+        "name": "Rules Layer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst rules_output = input.rules_output && typeof input.rules_output === 'object' ? input.rules_output : {};\nconst resolverInput = rules_output.resolver_input && typeof rules_output.resolver_input === 'object' ? rules_output.resolver_input : {};\n\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return { id: String(value), brand: null, model: null, price_etb: null, storage: null, condition: null, stock_status: null };\n  }\n  if (typeof value !== 'object') return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: value.brand ?? null,\n    model: value.model ?? value.name ?? value.title ?? null,\n    price_etb: Number.isFinite(Number(priceValue)) ? Number(priceValue) : null,\n    storage: value.storage ?? null,\n    condition: value.condition ?? null,\n    stock_status: value.stock_status ?? null,\n  };\n};\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 10);\nconst requestedName = typeof resolverInput.resolved_product_name === 'string' && resolverInput.resolved_product_name.trim()\n  ? resolverInput.resolved_product_name.trim().toLowerCase()\n  : null;\nlet selectedProduct = null;\nif (resolverInput.resolved_reference?.id) {\n  selectedProduct = shownProducts.find((product) => product.id === resolverInput.resolved_reference.id) ?? null;\n}\nif (!selectedProduct && requestedName) {\n  selectedProduct = shownProducts.find((product) => {\n    const name = [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\n    return Boolean(name) && name === requestedName;\n  }) ?? null;\n}\nif (!selectedProduct && currentInterest) {\n  selectedProduct = currentInterest;\n}\n\nconst products = selectedProduct ? [selectedProduct] : shownProducts.slice(0, 3);\nconst numericPrices = products.map((product) => product.price_etb).filter((value) => Number.isFinite(value));\nconst priceRange = numericPrices.length > 0 ? { min: Math.min(...numericPrices), max: Math.max(...numericPrices) } : null;\nlet result_type = 'no_match';\nlet next_step = 'ask_clarification';\nlet exchange_context = null;\n\nif (rules_output.reply_mode === 'clarify_reference') {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n} else if (resolverInput.flow === 'exchange') {\n  result_type = 'exchange_offer';\n  next_step = 'ask_clarification';\n  exchange_context = { current_interest: session.flow_context?.buy_flow?.current_interest ?? null, extracted_need: understanding_output.extracted_need ?? null };\n} else if (selectedProduct) {\n  result_type = 'single_product';\n  next_step = 'show_single';\n} else if (products.length > 1) {\n  result_type = 'multiple_options';\n  next_step = 'show_options';\n} else if ((resolverInput.missing_fields ?? []).length > 0) {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n}\n\nconst resolver_output = {\n  result_type,\n  products,\n  exchange_context,\n  next_step,\n  facts_for_reply: {\n    product_found: Boolean(selectedProduct || products.length > 0),\n    how_many_options: products.length,\n    stock_status: selectedProduct?.stock_status ?? null,\n    price_range: priceRange,\n  },\n};\n\nreturn [{ json: { event, session, client_config, understanding_output, rules_output, resolver_output } }];"
+        },
+        "id": "business-data-resolver",
+        "name": "Business Data Resolver",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0.15,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 2 Reply AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object with exactly this shape: {\\\"reply_text\\\":\\\"string\\\"}.\\\\nDo not add any other keys. Do not explain anything. Do not add markdown fences.\\\\nUse only the provided customer_text, understanding_output, rules_output, resolver_output, reply_context, last_messages, and client_config.\\\\nNever invent stock, price, warranty, availability, delivery, location, or shop facts.\\\\nKeep the reply to max 3 short lines.\\\\nDefault to natural Amharic in Ethiopic script for conversation.\\\\nUse English only for brand, model, storage, and product names where natural.\\\\nDo not produce awkward English-Amharic transliteration.\\\\nDo not use vague words like technology, electronics, gadgets, or accessories unless the customer explicitly asks for them.\\\\nPrefer wording around phone, mobile, model, exchange, shop, price, and availability.\\\\nOne emoji max, and only when the tone is playful.\\\\nStrict continuity rules:\\\\n- If reply_context.should_greet is false, never greet, never welcome, and never reopen with a seller introduction.\\\\n- Only greet on explicit restart or the first meaningful turn of a new conversation.\\\\n- If reply_context.has_active_context is true, continue that context instead of asking a generic buying-or-exchange question.\\\\n- If the user message is clear, respond to that exact message and do not replace it with a generic opening.\\\\n- If current_flow or current_topic exists, use it to continue the thread.\\\\nStrict reply mode rules:\\\\n- acknowledge_and_close: short close only, no question, no greeting.\\\\n- off_topic_redirect: short redirect only, one gentle question max, no greeting.\\\\n- small_talk_redirect: short natural acknowledgment plus one phone-related next step, no repeated welcome.\\\\n- clarify_reference: ask which one the customer means, no product facts, no generic reopening.\\\\n- resume_previous_flow: continue the previous thread directly, no restart behavior.\\\\n- business_resolve: use resolver facts only. If resolver facts are weak, ask one narrow follow-up tied to the actual customer text or current context.\\\\n- handoff_admin: brief reassurance only, no question, no greeting.\\\\nNarrow clarification rules:\\\\n- Do not ask buying-or-exchange unless intent is truly unclear and there is no useful session context.\\\\n- If the customer asked about price, ask a narrow follow-up about the model or brand if needed.\\\\n- If the customer asked available?, use the current item or current flow if present; do not reopen from zero.\\\\n- If the customer said that one or cheaper one, stay in reference clarification or prior-context continuation; do not reopen with a catalog greeting.\\\\nStyle rules:\\\\n- Sound like a practical Ethiopian phone seller on Telegram.\\\\n- Be short, direct, natural, and sales-aware.\\\\n- No robotic assistant phrasing.\\\\n- No broad onboarding copy unless this is truly a new conversation.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        understanding_output: $json.understanding_output ?? null,\n        rules_output: $json.rules_output ?? null,\n        resolver_output: $json.resolver_output ?? null,\n        reply_context: {\n          event_type: $json.event?.event_type ?? null,\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          message_count: Number($json.session?.message_count ?? 0),\n          history_count: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.length : 0,\n          has_active_context: Boolean(\n            ($json.session?.conversation_state?.current_flow ?? null)\n            || ($json.session?.conversation_state?.current_topic ?? null)\n            || (Array.isArray($json.session?.conversation_history) && $json.session.conversation_history.length > 0)\n            || (Array.isArray($json.session?.flow_context?.buy_flow?.shown_products) && $json.session.flow_context.buy_flow.shown_products.length > 0)\n            || $json.session?.flow_context?.buy_flow?.current_interest\n          ),\n          should_greet: Boolean(\n            ($json.event?.event_type === 'start_reset')\n            || (\n              Number($json.session?.message_count ?? 0) === 0\n              && (!Array.isArray($json.session?.conversation_history) || $json.session.conversation_history.length === 0)\n              && !$json.session?.conversation_state?.current_flow\n              && !$json.session?.conversation_state?.current_topic\n            )\n          ),\n        },\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-3) : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+          "options": {}
+        },
+        "id": "reply-ai",
+        "name": "Reply AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2480,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "let base = {};\ntry {\n  base = $item(0).$node['Business Data Resolver'].json ?? {};\n} catch {\n  base = {};\n}\nif (!base.rules_output) {\n  try {\n    base = $item(0).$node['Rules Layer'].json ?? base;\n  } catch {}\n}\nconst replyPayload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst understanding_output = base.understanding_output && typeof base.understanding_output === 'object' ? base.understanding_output : {};\nconst rules_output = base.rules_output && typeof base.rules_output === 'object' ? base.rules_output : {};\nconst resolver_output = base.resolver_output && typeof base.resolver_output === 'object' ? base.resolver_output : null;\nconst issues = [];\n\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (typeof value === 'object' && !Array.isArray(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\n\nconst parsedReply = parseJsonObject(replyPayload.choices?.[0]?.message?.content)\n  || parseJsonObject(replyPayload.output_text)\n  || parseJsonObject(replyPayload.text)\n  || parseJsonObject(replyPayload.data)\n  || parseJsonObject(replyPayload.result)\n  || parseJsonObject(replyPayload);\n\nconst reply_text = typeof parsedReply?.reply_text === 'string' ? parsedReply.reply_text.trim() : '';\nif (!reply_text) issues.push('missing_reply_text');\nconst lineCount = reply_text ? reply_text.split(/\\r?\\n/).filter((line) => line.trim()).length : 0;\nif (lineCount > 3) issues.push('reply_exceeds_max_lines');\nif (rules_output.reply_mode === 'acknowledge_and_close' && /[?]/.test(reply_text)) issues.push('acknowledge_and_close_should_not_ask_question');\nif (rules_output.reply_mode === 'handoff_admin' && /[?]/.test(reply_text)) issues.push('handoff_admin_should_not_ask_question');\nif (rules_output.should_call_resolver && !resolver_output) issues.push('resolver_expected_but_missing');\nif (!rules_output.should_call_resolver && rules_output.reply_mode === 'business_resolve') issues.push('business_resolve_requires_resolver');\nif (rules_output.reply_mode === 'business_resolve' && resolver_output && !['single_product', 'multiple_options', 'no_match', 'out_of_stock', 'clarification_needed', 'exchange_offer'].includes(resolver_output.result_type)) issues.push('invalid_resolver_result_type');\nif (!['business_resolve', 'off_topic_redirect', 'small_talk_redirect', 'clarify_reference', 'resume_previous_flow', 'acknowledge_and_close', 'handoff_admin'].includes(rules_output.reply_mode)) issues.push('invalid_reply_mode_contract');\n\nconst valid = issues.length === 0;\nconst safe_to_send = valid && Boolean(reply_text);\nconst now = Date.now();\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst nextHistory = history.concat([{ role: 'user', text: String(event.text ?? ''), timestamp: Number.isFinite(Number(event.timestamp)) ? Number(event.timestamp) : now }]).concat(safe_to_send ? [{ role: 'assistant', text: reply_text, timestamp: now }] : []).slice(-12);\n\nconst shownProducts = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length > 0\n  ? resolver_output.products\n  : (Array.isArray(session.flow_context?.buy_flow?.shown_products) ? session.flow_context.buy_flow.shown_products : []);\nconst currentInterest = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length === 1\n  ? resolver_output.products[0]\n  : (rules_output.resolver_input?.resolved_product_name ?? session.flow_context?.buy_flow?.current_interest ?? null);\nconst flow = rules_output.resolver_input?.flow ?? session.conversation_state?.current_flow ?? null;\nconst updatedSession = {\n  session_id: String(session.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(session.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(session.created_at)) ? Number(session.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, Number(session.message_count ?? 0)) + 1,\n  conversation_state: {\n    current_topic: rules_output.session_update?.last_topic ?? session.conversation_state?.current_topic ?? null,\n    current_flow: flow,\n    is_active: rules_output.reply_mode !== 'acknowledge_and_close',\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  conversation_history: nextHistory,\n  admin_escalation: rules_output.reply_mode === 'handoff_admin'\n    ? { required: true, reason: rules_output.reasoning ?? 'handoff_admin', status: 'pending' }\n    : (session.admin_escalation && typeof session.admin_escalation === 'object' ? session.admin_escalation : { required: false, reason: null, status: null }),\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    rules_output,\n    resolver_output,\n    reply_text,\n    valid,\n    issues,\n    safe_to_send,\n    telegram_payload: { chat_id: event.chatId ?? null, text: reply_text },\n    session_update_payload: { userId: event.userId ?? null, chatId: event.chatId ?? null, session: updatedSession },\n    validation_meta: { parsed_reply: parsedReply, timestamp: now },\n  },\n}];"
+        },
+        "id": "side-effects",
+        "name": "Validation",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2720,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "sendChatAction",
+          "chatId": "={{ $json.event.chatId }}",
+          "action": "typing"
+        },
+        "id": "telegram-typing",
+        "name": "Telegram Typing",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          800,
+          180
+        ],
+        "webhookId": "0a9da8c1-e60c-4c8b-8bc0-ea41d939223f"
+      },
+      {
+        "parameters": {
+          "chatId": "={{ $item(0).$node['Validation'].json.telegram_payload.chat_id }}",
+          "text": "={{ $item(0).$node['Validation'].json.reply_text }}",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send",
+        "name": "Telegram Send",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          3200,
+          300
+        ],
+        "webhookId": "f8a344d2-7070-4b2b-9ebe-6f0baa4d2d63"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($item(0).$node['Validation'].json.session_update_payload) }}",
+          "options": {}
+        },
+        "id": "session-save",
+        "name": "Session Save",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3440,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "9fbfb8f2-af27-4229-a0dd-78a7248d5fcc",
+                "leftValue": "={{ $json.rules_output.should_call_resolver }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "6cf3b3b0-ecc7-4b84-8cf2-885d6188a469",
+        "name": "Should Resolve",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2000,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "2b7c4a7e-5945-4c2a-a27a-cff69a7ca7a4",
+                "leftValue": "={{ $json.safe_to_send }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "de4bc6fc-cd00-4ba0-b3c9-d5ecb82c5309",
+        "name": "Safe To Send",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2960,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Telegram Input": {
+        "main": [
+          [
+            {
+              "node": "Event Normalizer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Event Normalizer": {
+        "main": [
+          [
+            {
+              "node": "Session Load",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Telegram Typing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Load": {
+        "main": [
+          [
+            {
+              "node": "Session Bootstrap",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Bootstrap": {
+        "main": [
+          [
+            {
+              "node": "Understanding AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Understanding AI": {
+        "main": [
+          [
+            {
+              "node": "Understanding JSON Guard",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Understanding JSON Guard": {
+        "main": [
+          [
+            {
+              "node": "Rules Layer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rules Layer": {
+        "main": [
+          [
+            {
+              "node": "Should Resolve",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should Resolve": {
+        "main": [
+          [
+            {
+              "node": "Business Data Resolver",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Business Data Resolver": {
+        "main": [
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Reply AI": {
+        "main": [
+          [
+            {
+              "node": "Validation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validation": {
+        "main": [
+          [
+            {
+              "node": "Safe To Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Safe To Send": {
+        "main": [
+          [
+            {
+              "node": "Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Telegram Send": {
+        "main": [
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Abenezer Tadiyos ",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-04-02T20:59:42.008Z",
+        "id": 26,
+        "workflowId": "hc55q2zfas7gG1yu",
+        "versionId": "07b4f945-022d-4ddd-92b3-d75701a34e13",
+        "event": "deactivated",
+        "userId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      },
+      {
+        "createdAt": "2026-04-02T20:59:42.166Z",
+        "id": 27,
+        "workflowId": "hc55q2zfas7gG1yu",
+        "versionId": "07b4f945-022d-4ddd-92b3-d75701a34e13",
+        "event": "activated",
+        "userId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      }
+    ]
+  }
+}

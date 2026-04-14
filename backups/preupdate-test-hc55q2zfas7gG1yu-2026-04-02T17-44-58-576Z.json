@@ -1,0 +1,784 @@
+{
+  "updatedAt": "2026-04-02T17:36:18.951Z",
+  "createdAt": "2026-04-02T17:36:18.951Z",
+  "id": "hc55q2zfas7gG1yu",
+  "name": "Abenier Bot Logic Base",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "telegram-input",
+      "name": "Telegram Input",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+      },
+      "id": "event-normalizer",
+      "name": "Event Normalizer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"userId\": \"={{ $json.event.userId }}\",\n  \"chatId\": \"={{ $json.event.chatId }}\"\n}",
+        "options": {}
+      },
+      "id": "session-load",
+      "name": "Session Load",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nif (!event) {\n  try {\n    event = $item(0).$node['Event Normalizer'].json.event;\n  } catch {\n    event = null;\n  }\n}\nevent = event && typeof event === 'object' ? event : {};\nconst remoteSession = payload.session ?? payload.data?.session ?? null;\nconst remoteExists = payload.session?.exists ?? payload.data?.session?.exists ?? false;\nconst rawSessionData = remoteSession?.data ?? remoteSession;\nconst hasExistingSession = Boolean(remoteExists || (rawSessionData && typeof rawSessionData === 'object' && Object.keys(rawSessionData).length > 0));\nlet sellerId = '__SELLER_ID_FROM_ENV__';\nif (typeof $env !== 'undefined' && $env?.SELLER_ID) {\n  sellerId = String($env.SELLER_ID);\n}\nconst now = Date.now();\nconst baseSession = {\n  isNew: true,\n  session_version: 2,\n  chat_id: String(event.chatId ?? ''),\n  seller_id: sellerId,\n  language: null,\n  stage: 'idle',\n  resolved_flow: 'none',\n  tentative_flow: 'none',\n  next_action: null,\n  route_recommendation: 'stay_exploratory',\n  followup_round: 0,\n  last_asked_key: null,\n  collected_fields: {},\n  missing_information: [],\n  evidence_accumulated: 0,\n  message_history: [],\n  last_understanding_output: null,\n  last_rule_decision: null,\n  last_resolver_output: null,\n  shown_options: [],\n  selected_option: null,\n  ranking_order: [],\n  cheaper_option: null,\n  active_product_id: null,\n  deep_link_context: null,\n  callback_context: null,\n  lead_state: null,\n  notify_state: null,\n  handoff_state: null,\n  recovery_state: null,\n  error_count: 0,\n  updated_at: now,\n};\nconst session = hasExistingSession\n  ? {\n      ...baseSession,\n      ...(rawSessionData && typeof rawSessionData === 'object' ? rawSessionData : {}),\n      isNew: false,\n      chat_id: String((rawSessionData && rawSessionData.chat_id) || event.chatId || ''),\n      seller_id: String((rawSessionData && rawSessionData.seller_id) || sellerId),\n      language: rawSessionData && Object.prototype.hasOwnProperty.call(rawSessionData, 'language') ? rawSessionData.language : null,\n      session_version: 2,\n      updated_at: now,\n    }\n  : baseSession;\nreturn [{ json: { event, session } }];"
+      },
+      "id": "session-bootstrap",
+      "name": "Session Bootstrap",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.UNDERSTANDING_API_URL || $env.LLM_UNDERSTANDING_URL; if (!base) { throw new Error('Missing understanding URL env: UNDERSTANDING_API_URL or LLM_UNDERSTANDING_URL'); } return String(base).replace(/\\/$/, ''); })()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"task\":\"understanding_layer\",\"prompt_version\":\"v2\",\"event\":$json.event,\"session\":$json.session,\"message_history\":Array.isArray($json.session?.message_history)?$json.session.message_history.slice(-8):[]}",
+        "options": {}
+      },
+      "id": "understanding-ai",
+      "name": "Understanding AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nlet session = payload.session ?? null;\ntry {\n  if (!event) {\n    event = $item(0).$node['Session Bootstrap'].json.event;\n  }\n  if (!session) {\n    session = $item(0).$node['Session Bootstrap'].json.session;\n  }\n} catch {}\n\nevent = event && typeof event === 'object' ? event : {};\nsession = session && typeof session === 'object' ? session : {};\n\nconst source = payload.understanding || payload.data || payload.result || payload;\nconst allowedUserNeed = ['exploration', 'recommendation', 'clarification', 'transaction', 'info_request', 'post_sale', 'exchange_inquiry'];\nconst allowedNextAction = ['clarify', 'ask_one_thing', 'suggest_options', 'answer_direct', 'push_to_mini_app', 'handoff', 'notify_me'];\nconst allowedTentativeFlow = ['buy_soft', 'exchange_soft', 'faq', 'support', 'none'];\nconst allowedRouteRecommendation = ['stay_exploratory', 'soft_buy', 'soft_exchange', 'strong_faq', 'strong_support'];\nconst allowedAskedKeys = ['budget_etb', 'model', 'condition', 'storage', 'old_phone_details'];\n\nconst toNumber = (value, fallback) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;\nconst clamp = (value, min, max) => Math.min(max, Math.max(min, value));\nconst pickEnum = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;\n\nconst normalized = {\n  user_need: pickEnum(source.user_need, allowedUserNeed, 'clarification'),\n  next_action: pickEnum(source.next_action, allowedNextAction, 'clarify'),\n  tentative_flow: pickEnum(source.tentative_flow, allowedTentativeFlow, 'none'),\n  confidence: clamp(toNumber(source.confidence, 0), 0, 1),\n  ambiguity: clamp(toNumber(source.ambiguity, 1), 0, 1),\n  missing_information: Array.isArray(source.missing_information) ? source.missing_information.filter((v) => allowedAskedKeys.includes(v)) : [],\n  route_recommendation: pickEnum(source.route_recommendation, allowedRouteRecommendation, 'stay_exploratory'),\n  evidence_accumulated: Math.max(0, Math.min(5, Number.isInteger(source.evidence_accumulated) ? source.evidence_accumulated : 0)),\n  reference_resolution: {\n    refers_to: source.reference_resolution?.refers_to ?? null,\n    resolved_id: source.reference_resolution?.resolved_id ?? null,\n    resolved_entity: source.reference_resolution?.resolved_entity ?? null,\n  },\n  last_asked_key: allowedAskedKeys.includes(source.last_asked_key) ? source.last_asked_key : null,\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    event_type: event.event_type ?? 'text_message',\n    message: { text: event.text ?? '' },\n    callback_query: event.callback_query ?? null,\n    deep_link: event.deep_link ?? null,\n    ...normalized,\n    validation_meta: {\n      validated: true,\n      source: 'validation_node',\n      timestamp: Date.now(),\n    },\n  },\n}];"
+      },
+      "id": "validation-node",
+      "name": "Validation Node",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json;\nconst session = input.session || {};\nconst eventType = input.event_type || \"text_message\";\nconst message = input.message || {};\nconst callbackQuery = input.callback_query || null;\nconst deepLink = input.deep_link || null;\n\nconst understanding = {\n  user_need: input.user_need ?? \"clarification\",\n  next_action: input.next_action ?? \"clarify\",\n  tentative_flow: input.tentative_flow ?? \"none\",\n  confidence: typeof input.confidence === \"number\" ? input.confidence : 0,\n  ambiguity: typeof input.ambiguity === \"number\" ? input.ambiguity : 1,\n  missing_information: Array.isArray(input.missing_information) ? input.missing_information : [],\n  route_recommendation: input.route_recommendation ?? \"stay_exploratory\",\n  evidence_accumulated: Number.isInteger(input.evidence_accumulated) ? input.evidence_accumulated : 0,\n  reference_resolution: input.reference_resolution || {\n    refers_to: null,\n    resolved_id: null,\n    resolved_entity: null,\n  },\n  last_asked_key: input.last_asked_key ?? null,\n};\n\nconst text = (message.text || \"\").trim().toLowerCase();\nconst sessionResolvedFlow = session.resolved_flow || \"none\";\nconst sessionTentativeFlow = session.tentative_flow || \"none\";\nconst sessionSelectedOption = session.selected_option || null;\nconst shownOptions = Array.isArray(session.shown_options) ? session.shown_options : [];\nconst sessionLastAskedKey = session.last_asked_key || null;\nconst sessionEvidence = Number.isInteger(session.evidence_accumulated) ? session.evidence_accumulated : 0;\nconst errorCount = Number.isInteger(session.error_count) ? session.error_count : 0;\n\nlet decision = {\n  event_type: eventType,\n  resolved_flow: sessionResolvedFlow,\n  tentative_flow: understanding.tentative_flow || sessionTentativeFlow || \"none\",\n  route_locked: sessionResolvedFlow !== \"none\",\n  next_action: understanding.next_action || \"clarify\",\n  reply_mode: \"exploratory_question\",\n  handoff_triggered: false,\n  notify_triggered: false,\n  resolver_needed: true,\n  selected_option: sessionSelectedOption ? sessionSelectedOption.id || sessionSelectedOption : null,\n  last_asked_key: understanding.last_asked_key || sessionLastAskedKey || null,\n  decision_reason: \"default_initialization\",\n};\n\nconst hasStrongBuySignal = () => {\n  const buyWords = [\"buy\", \"new phone\", \"adis\", \"phone felige\", \"slk falige\", \"iphone\", \"samsung\"];\n  return buyWords.some(w => text.includes(w));\n};\n\nconst hasStrongExchangeSignal = () => {\n  const exchangeWords = [\"exchange\", \"swap\", \"trade in\", \"ልውውጥ\", \"ቀይረ\", \"ቀያየር\"];\n  return exchangeWords.some(w => text.includes(w)) || understanding.user_need === \"exchange_inquiry\";\n};\n\nconst hasFaqSignal = () => {\n  const faqWords = [\n    \"where\", \"location\", \"address\", \"yet\", \"agegnachu\",\n    \"warranty\", \"delivery\", \"payment\", \"hours\", \"policy\",\n    \"አድራሻ\", \"የት\", \"ዋስትና\", \"ክፍያ\", \"ዴሊቨሪ\"\n  ];\n  return faqWords.some(w => text.includes(w)) || understanding.tentative_flow === \"faq\";\n};\n\nconst hasSupportSignal = () => {\n  const supportWords = [\n    \"problem\", \"issue\", \"order\", \"delayed\", \"help\",\n    \"ችግር\", \"order\", \"support\"\n  ];\n  return supportWords.some(w => text.includes(w)) || understanding.tentative_flow === \"support\";\n};\n\nconst isShortRefinement = () => {\n  const refinementWords = [\n    \"128gb\", \"8/128\", \"8gb\", \"black\", \"last price\", \"cheaper\",\n    \"that one\", \"second one\", \"first one\", \"version\",\n    \"ጥቁር\", \"ያ\", \"ሁለተኛ\", \"ዋጋ\"\n  ];\n  return (\n    text.length > 0 &&\n    (\n      refinementWords.some(w => text.includes(w)) ||\n      understanding.reference_resolution?.refers_to !== null\n    )\n  );\n};\n\nconst wantsHuman = () => {\n  const words = [\"human\", \"admin\", \"owner\", \"person\", \"talk to\", \"ሰው\", \"አድሚን\"];\n  return words.some(w => text.includes(w));\n};\n\nif (eventType === \"start_reset\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"none\",\n    route_locked: false,\n    next_action: \"clarify\",\n    reply_mode: \"neutral_clarify\",\n    resolver_needed: false,\n    selected_option: null,\n    last_asked_key: null,\n    decision_reason: \"start_reset_event\",\n  };\n}\nelse if (eventType === \"deep_link_start\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"buy\",\n    tentative_flow: \"buy_soft\",\n    route_locked: false,\n    next_action: \"suggest_options\",\n    reply_mode: \"suggest_options\",\n    resolver_needed: true,\n    decision_reason: \"deep_link_start_event\",\n  };\n}\nelse if (eventType === \"callback_action\") {\n  const action = callbackQuery?.data || callbackQuery?.action || \"unknown_callback\";\n\n  if (String(action).includes(\"select_option\")) {\n    decision = {\n      ...decision,\n      resolved_flow: sessionResolvedFlow === \"none\" ? \"buy\" : sessionResolvedFlow,\n      tentative_flow: \"buy_soft\",\n      route_locked: true,\n      next_action: \"suggest_options\",\n      reply_mode: \"confirm_selection\",\n      resolver_needed: true,\n      decision_reason: \"callback_select_option\",\n    };\n  } else if (String(action).includes(\"confirm_order\")) {\n    decision = {\n      ...decision,\n      resolved_flow: \"buy\",\n      tentative_flow: \"buy_soft\",\n      route_locked: true,\n      next_action: \"answer_direct\",\n      reply_mode: \"confirm_selection\",\n      resolver_needed: true,\n      decision_reason: \"callback_confirm_order\",\n    };\n  } else if (String(action).includes(\"change_option\")) {\n    decision = {\n      ...decision,\n      resolved_flow: \"buy\",\n      tentative_flow: \"buy_soft\",\n      route_locked: true,\n      next_action: \"suggest_options\",\n      reply_mode: \"suggest_options\",\n      resolver_needed: true,\n      decision_reason: \"callback_change_option\",\n    };\n  } else if (String(action).includes(\"notify\")) {\n    decision = {\n      ...decision,\n      notify_triggered: true,\n      next_action: \"notify_me\",\n      reply_mode: \"notify_confirmation\",\n      resolver_needed: false,\n      decision_reason: \"callback_notify_me\",\n    };\n  } else if (String(action).includes(\"admin\") || String(action).includes(\"handoff\")) {\n    decision = {\n      ...decision,\n      handoff_triggered: true,\n      next_action: \"handoff\",\n      reply_mode: \"handoff_notice\",\n      resolver_needed: false,\n      decision_reason: \"callback_admin_handoff\",\n    };\n  } else {\n    decision = {\n      ...decision,\n      next_action: \"clarify\",\n      reply_mode: \"neutral_clarify\",\n      resolver_needed: false,\n      decision_reason: \"callback_unknown_safe_fallback\",\n    };\n  }\n}\n\nelse if (understanding.confidence < 0.7 || understanding.ambiguity > 0.4) {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"none\",\n    route_locked: false,\n    next_action: \"clarify\",\n    reply_mode: \"neutral_clarify\",\n    resolver_needed: false,\n    last_asked_key: null,\n    decision_reason: \"weak_understanding_fallback\",\n  };\n}\n\nelse if (isShortRefinement() && sessionResolvedFlow === \"buy\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"buy\",\n    tentative_flow: \"buy_soft\",\n    route_locked: true,\n    next_action: understanding.next_action === \"answer_direct\" ? \"answer_direct\" : \"suggest_options\",\n    reply_mode: \"suggest_options\",\n    resolver_needed: true,\n    selected_option: understanding.reference_resolution?.resolved_id || decision.selected_option,\n    decision_reason: \"short_buy_refinement_inherited\",\n  };\n}\nelse if (isShortRefinement() && sessionResolvedFlow === \"exchange\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"exchange\",\n    tentative_flow: \"exchange_soft\",\n    route_locked: true,\n    next_action: \"ask_one_thing\",\n    reply_mode: \"exploratory_question\",\n    resolver_needed: true,\n    decision_reason: \"short_exchange_refinement_inherited\",\n  };\n}\n\nelse if (hasFaqSignal()) {\n  decision = {\n    ...decision,\n    resolved_flow: \"faq\",\n    tentative_flow: \"faq\",\n    route_locked: true,\n    next_action: \"answer_direct\",\n    reply_mode: \"direct_answer\",\n    resolver_needed: true,\n    last_asked_key: null,\n    decision_reason: \"faq_override\",\n  };\n}\nelse if (hasSupportSignal()) {\n  decision = {\n    ...decision,\n    resolved_flow: \"support\",\n    tentative_flow: \"support\",\n    route_locked: true,\n    next_action: \"answer_direct\",\n    reply_mode: \"direct_answer\",\n    resolver_needed: true,\n    last_asked_key: null,\n    decision_reason: \"support_override\",\n  };\n}\n\nelse if (hasStrongExchangeSignal()) {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"exchange_soft\",\n    route_locked: false,\n    next_action: understanding.next_action || \"ask_one_thing\",\n    reply_mode: \"exploratory_question\",\n    resolver_needed: true,\n    decision_reason: \"strong_exchange_soft_route\",\n  };\n}\nelse if (hasStrongBuySignal() || understanding.tentative_flow === \"buy_soft\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"buy_soft\",\n    route_locked: false,\n    next_action: understanding.next_action || \"ask_one_thing\",\n    reply_mode: understanding.next_action === \"suggest_options\" ? \"suggest_options\" : \"exploratory_question\",\n    resolver_needed: true,\n    decision_reason: \"strong_buy_soft_route\",\n  };\n}\n\nif (\n  decision.resolved_flow === \"none\" &&\n  understanding.confidence >= 0.85 &&\n  understanding.ambiguity <= 0.25 &&\n  (understanding.evidence_accumulated >= 2 || sessionEvidence >= 2)\n) {\n  if (decision.tentative_flow === \"buy_soft\") {\n    decision.resolved_flow = \"buy\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_buy_by_evidence\";\n  } else if (decision.tentative_flow === \"exchange_soft\") {\n    decision.resolved_flow = \"exchange\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_exchange_by_evidence\";\n  } else if (decision.tentative_flow === \"faq\") {\n    decision.resolved_flow = \"faq\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_faq_by_evidence\";\n  } else if (decision.tentative_flow === \"support\") {\n    decision.resolved_flow = \"support\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_support_by_evidence\";\n  }\n}\n\nif (\n  decision.next_action === \"ask_one_thing\" &&\n  decision.last_asked_key &&\n  sessionLastAskedKey &&\n  decision.last_asked_key === sessionLastAskedKey &&\n  understanding.missing_information.length === 0\n) {\n  decision.next_action = \"clarify\";\n  decision.reply_mode = \"neutral_clarify\";\n  decision.last_asked_key = null;\n  decision.decision_reason = \"prevent_repeated_question\";\n}\n\nif (wantsHuman() || errorCount >= 3) {\n  decision.handoff_triggered = true;\n  decision.next_action = \"handoff\";\n  decision.reply_mode = \"handoff_notice\";\n  decision.resolver_needed = false;\n  decision.decision_reason = wantsHuman() ? \"explicit_handoff_request\" : \"error_threshold_handoff\";\n}\n\nif (decision.next_action === \"notify_me\") {\n  decision.notify_triggered = true;\n  decision.reply_mode = \"notify_confirmation\";\n  decision.resolver_needed = false;\n  decision.decision_reason = \"notify_triggered_by_decision\";\n}\n\nif (!decision.decision_reason || decision.decision_reason === \"default_initialization\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"none\",\n    route_locked: false,\n    next_action: \"clarify\",\n    reply_mode: \"neutral_clarify\",\n    resolver_needed: false,\n    decision_reason: \"default_exploratory_fallback\",\n  };\n}\n\nreturn [{ json: { ...input, rules_decision: decision } }];"
+      },
+      "id": "rules-layer",
+      "name": "Rules Layer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst rulesDecision = input.rules_decision && typeof input.rules_decision === 'object' ? input.rules_decision : {};\nconst understandingOutput = {\n  user_need: input.user_need ?? 'clarification',\n  next_action: input.next_action ?? 'clarify',\n  tentative_flow: input.tentative_flow ?? 'none',\n  confidence: typeof input.confidence === 'number' ? input.confidence : 0,\n  ambiguity: typeof input.ambiguity === 'number' ? input.ambiguity : 1,\n  missing_information: Array.isArray(input.missing_information) ? input.missing_information : [],\n  route_recommendation: input.route_recommendation ?? 'stay_exploratory',\n  evidence_accumulated: Number.isInteger(input.evidence_accumulated) ? input.evidence_accumulated : 0,\n  reference_resolution: input.reference_resolution && typeof input.reference_resolution === 'object'\n    ? input.reference_resolution\n    : { refers_to: null, resolved_id: null, resolved_entity: null },\n  last_asked_key: input.last_asked_key ?? null,\n};\nconst collectedFields = session.collected_fields && typeof session.collected_fields === 'object' ? session.collected_fields : {};\nconst referenceEntity = understandingOutput.reference_resolution?.resolved_entity && typeof understandingOutput.reference_resolution.resolved_entity === 'object'\n  ? understandingOutput.reference_resolution.resolved_entity\n  : null;\nconst rawBudget = collectedFields.budget_etb;\nconst parsedBudget = typeof rawBudget === 'number'\n  ? rawBudget\n  : typeof rawBudget === 'string' && rawBudget.trim() && !Number.isNaN(Number(rawBudget))\n    ? Number(rawBudget)\n    : null;\nconst constraints = {\n  brand: collectedFields.brand ?? referenceEntity?.brand ?? null,\n  model: collectedFields.model ?? referenceEntity?.model ?? null,\n  budget_etb: parsedBudget,\n  storage: collectedFields.storage ?? referenceEntity?.storage ?? null,\n  condition: collectedFields.condition ?? null,\n};\nconst rankingOrder = Array.isArray(session.ranking_order) ? session.ranking_order : [];\nconst shownOptions = Array.isArray(session.shown_options) ? session.shown_options : [];\nconst cheaperOptionId = session.cheaper_option ?? null;\nconst hasExchangeCore = Boolean(collectedFields.old_brand && collectedFields.old_model && collectedFields.condition);\nconst exchangeValidation = {\n  is_complete: hasExchangeCore,\n  missing_fields: [\n    ...(collectedFields.old_brand ? [] : ['old_brand']),\n    ...(collectedFields.old_model ? [] : ['old_model']),\n    ...(collectedFields.condition ? [] : ['condition']),\n  ],\n};\nconst resultMode = rulesDecision.next_action === 'notify_me' || rulesDecision.notify_triggered\n  ? 'notify_path'\n  : 'no_match_yet';\nconst resolverResult = {\n  result_mode: resultMode,\n  products: [],\n  ranked_options: {\n    shown_options: shownOptions,\n    ranking_order: rankingOrder,\n    cheaper_option_id: cheaperOptionId,\n  },\n  selected_option_resolved: null,\n  store_facts: {\n    location: null,\n    hours: null,\n    payment: null,\n    warranty: null,\n    delivery: null,\n    policy: null,\n  },\n  answer_facts: {\n    constraints,\n    active_product_id: session.active_product_id ?? null,\n    selected_option: rulesDecision.selected_option ?? null,\n  },\n  option_cards: [],\n  support_payload: rulesDecision.resolved_flow === 'support' || rulesDecision.handoff_triggered\n    ? {\n        chat_id: session.chat_id ?? null,\n        user_id: event.userId ?? null,\n        event_type: event.event_type ?? 'text_message',\n        requested_action: rulesDecision.next_action ?? null,\n      }\n    : null,\n  exchange_validation: exchangeValidation,\n  notify_prepared: Boolean(rulesDecision.notify_triggered || rulesDecision.next_action === 'notify_me'),\n  handoff_prepared: Boolean(rulesDecision.handoff_triggered || rulesDecision.next_action === 'handoff'),\n  reference_applied: Boolean(understandingOutput.reference_resolution?.resolved_id),\n  resolver_reason: !rulesDecision.resolver_needed\n    ? 'resolver_not_required_by_rules'\n    : rulesDecision.next_action === 'notify_me' || rulesDecision.notify_triggered\n      ? 'notify_path_prepared'\n      : 'waiting_for_live_business_data_wiring',\n  resolver_meta: {\n    source: 'business_data_resolver_placeholder',\n    uses_live_data: false,\n    requested_flow: rulesDecision.resolved_flow ?? 'none',\n    requested_action: rulesDecision.next_action ?? 'clarify',\n    selected_option: rulesDecision.selected_option ?? null,\n    last_asked_key: rulesDecision.last_asked_key ?? null,\n    timestamp: Date.now(),\n  },\n};\nreturn [{\n  json: {\n    ...input,\n    constraints,\n    resolver_result: resolverResult,\n  },\n}];"
+      },
+      "id": "business-data-resolver",
+      "name": "Business Data Resolver",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.REPLY_API_URL || $env.LLM_REPLY_URL; if (!base) { throw new Error('Missing reply URL env: REPLY_API_URL or LLM_REPLY_URL'); } return String(base).replace(/\\/$/, ''); })()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=({\"task\":\"reply_layer\",\"prompt_version\":\"v2\",\"event\":$json.event,\"session\":$json.session,\"rules_output\":$json.rules_decision,\"resolver_output\":$json.resolver_result})",
+        "options": {}
+      },
+      "id": "reply-ai",
+      "name": "Reply AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = (() => {\n  try {\n    return $item(0).$node['Business Data Resolver'].json ?? {};\n  } catch {\n    return {};\n  }\n})();\nconst replyPayload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst rulesDecision = base.rules_decision && typeof base.rules_decision === 'object' ? base.rules_decision : {};\nconst resolverResult = base.resolver_result && typeof base.resolver_result === 'object' ? base.resolver_result : {};\nconst replySource = replyPayload.reply && typeof replyPayload.reply === 'object'\n  ? replyPayload.reply\n  : replyPayload.data && typeof replyPayload.data === 'object'\n    ? replyPayload.data\n    : replyPayload.result && typeof replyPayload.result === 'object'\n      ? replyPayload.result\n      : replyPayload;\nconst fallbackReplyTextByMode = {\n  neutral_clarify: 'Please share one detail so I can guide you correctly.',\n  exploratory_question: 'What one detail should I use to narrow this down?',\n  direct_answer: 'Here is the information available right now.',\n  suggest_options: 'I can show the best matching options next.',\n  confirm_selection: 'Your selection is noted for the next step.',\n  handoff_notice: 'Our team will contact you shortly.',\n  notify_confirmation: 'Your notify request is noted.',\n};\nconst replyMode = rulesDecision.reply_mode ?? 'neutral_clarify';\nconst finalReply = {\n  reply_text: typeof replySource.reply_text === 'string' && replySource.reply_text.trim()\n    ? replySource.reply_text.trim()\n    : (fallbackReplyTextByMode[replyMode] ?? fallbackReplyTextByMode.neutral_clarify),\n  inline_keyboard: Array.isArray(replySource.inline_keyboard) ? replySource.inline_keyboard : null,\n  parse_mode: ['HTML', 'MarkdownV2'].includes(replySource.parse_mode) ? replySource.parse_mode : null,\n  reply_reason: typeof replySource.reply_reason === 'string' && replySource.reply_reason.trim()\n    ? replySource.reply_reason.trim()\n    : 'reply_placeholder_fallback',\n};\nconst updatedSession = {\n  ...session,\n  resolved_flow: rulesDecision.resolved_flow ?? session.resolved_flow ?? 'none',\n  tentative_flow: rulesDecision.tentative_flow ?? session.tentative_flow ?? 'none',\n  next_action: rulesDecision.next_action ?? session.next_action ?? null,\n  last_asked_key: rulesDecision.last_asked_key ?? session.last_asked_key ?? null,\n  missing_information: Array.isArray(base.missing_information)\n    ? base.missing_information\n    : (Array.isArray(session.missing_information) ? session.missing_information : []),\n  evidence_accumulated: Number.isInteger(base.evidence_accumulated)\n    ? base.evidence_accumulated\n    : (Number.isInteger(session.evidence_accumulated) ? session.evidence_accumulated : 0),\n  shown_options: Array.isArray(resolverResult.ranked_options?.shown_options)\n    ? resolverResult.ranked_options.shown_options\n    : (Array.isArray(session.shown_options) ? session.shown_options : []),\n  ranking_order: Array.isArray(resolverResult.ranked_options?.ranking_order)\n    ? resolverResult.ranked_options.ranking_order\n    : (Array.isArray(session.ranking_order) ? session.ranking_order : []),\n  cheaper_option: resolverResult.ranked_options?.cheaper_option_id ?? session.cheaper_option ?? null,\n  selected_option: rulesDecision.selected_option ?? session.selected_option ?? null,\n  active_product_id: resolverResult.answer_facts?.active_product_id ?? session.active_product_id ?? null,\n  last_understanding_output: {\n    user_need: base.user_need ?? null,\n    next_action: base.next_action ?? null,\n    tentative_flow: base.tentative_flow ?? null,\n    confidence: base.confidence ?? null,\n    ambiguity: base.ambiguity ?? null,\n    missing_information: Array.isArray(base.missing_information) ? base.missing_information : [],\n    route_recommendation: base.route_recommendation ?? null,\n    evidence_accumulated: base.evidence_accumulated ?? null,\n    reference_resolution: base.reference_resolution ?? null,\n    last_asked_key: base.last_asked_key ?? null,\n  },\n  last_rule_decision: rulesDecision,\n  last_resolver_output: resolverResult,\n  updated_at: Date.now(),\n};\nconst sideEffects = {\n  notify_requested: Boolean(rulesDecision.notify_triggered || rulesDecision.next_action === 'notify_me'),\n  handoff_requested: Boolean(rulesDecision.handoff_triggered || rulesDecision.next_action === 'handoff'),\n  notify_payload: rulesDecision.notify_triggered || rulesDecision.next_action === 'notify_me'\n    ? {\n        chat_id: updatedSession.chat_id ?? event.chatId ?? null,\n        user_id: event.userId ?? null,\n        selected_option: rulesDecision.selected_option ?? null,\n      }\n    : null,\n  handoff_payload: rulesDecision.handoff_triggered || rulesDecision.next_action === 'handoff'\n    ? {\n        chat_id: updatedSession.chat_id ?? event.chatId ?? null,\n        user_id: event.userId ?? null,\n        event_type: event.event_type ?? 'text_message',\n        decision_reason: rulesDecision.decision_reason ?? null,\n      }\n    : null,\n};\nconst telegramPayload = {\n  chat_id: event.chatId ?? updatedSession.chat_id ?? null,\n  text: finalReply.reply_text,\n  parse_mode: finalReply.parse_mode,\n  reply_markup: finalReply.inline_keyboard ? { inline_keyboard: finalReply.inline_keyboard } : null,\n};\nconst sessionUpdatePayload = {\n  userId: event.userId ?? null,\n  chatId: event.chatId ?? updatedSession.chat_id ?? null,\n  session: updatedSession,\n};\nreturn [{\n  json: {\n    ...base,\n    final_reply: finalReply,\n    reply_mode: replyMode,\n    reply_meta: {\n      source: 'side_effects_node',\n      prepared: true,\n      timestamp: Date.now(),\n    },\n    side_effects: sideEffects,\n    telegram_payload: telegramPayload,\n    session_update_payload: sessionUpdatePayload,\n  },\n}];"
+      },
+      "id": "side-effects",
+      "name": "Side Effects",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const explicit = $env.TELEGRAM_SEND_URL; if (explicit) { return String(explicit).replace(/\\/$/, ''); } const base = $env.TELEGRAM_BOT_API_BASE_URL || $env.TELEGRAM_API_BASE_URL; if (!base) { throw new Error('Missing Telegram send URL env: TELEGRAM_SEND_URL or TELEGRAM_BOT_API_BASE_URL or TELEGRAM_API_BASE_URL'); } return String(base).replace(/\\/$/, '') + '/sendMessage'; })()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=(() => { const payload = { chat_id: $json.telegram_payload.chat_id, text: $json.telegram_payload.text }; if ($json.telegram_payload.parse_mode) { payload.parse_mode = $json.telegram_payload.parse_mode; } if ($json.telegram_payload.reply_markup) { payload.reply_markup = $json.telegram_payload.reply_markup; } return payload; })()",
+        "options": {}
+      },
+      "id": "telegram-send",
+      "name": "Telegram Send",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=({\"userId\":$item(0).$node['Side Effects'].json.session_update_payload.userId,\"chatId\":$item(0).$node['Side Effects'].json.session_update_payload.chatId,\"session\":$item(0).$node['Side Effects'].json.session_update_payload.session})",
+        "options": {}
+      },
+      "id": "session-save",
+      "name": "Session Save",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2960,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Input": {
+      "main": [
+        [
+          {
+            "node": "Event Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Session Load",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Load": {
+      "main": [
+        [
+          {
+            "node": "Session Bootstrap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Bootstrap": {
+      "main": [
+        [
+          {
+            "node": "Understanding AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Understanding AI": {
+      "main": [
+        [
+          {
+            "node": "Validation Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Node": {
+      "main": [
+        [
+          {
+            "node": "Rules Layer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rules Layer": {
+      "main": [
+        [
+          {
+            "node": "Business Data Resolver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Data Resolver": {
+      "main": [
+        [
+          {
+            "node": "Reply AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply AI": {
+      "main": [
+        [
+          {
+            "node": "Side Effects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Side Effects": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send": {
+      "main": [
+        [
+          {
+            "node": "Session Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "9133a914-4467-4ae8-921d-ebbbdf5e376f",
+  "activeVersionId": "9133a914-4467-4ae8-921d-ebbbdf5e376f",
+  "versionCounter": 3,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-02T17:36:18.951Z",
+      "createdAt": "2026-04-02T17:36:18.951Z",
+      "role": "workflow:owner",
+      "workflowId": "hc55q2zfas7gG1yu",
+      "projectId": "Fk6QzHiE8AwQnJYG",
+      "project": {
+        "updatedAt": "2026-04-02T17:28:20.518Z",
+        "createdAt": "2026-04-02T17:25:40.291Z",
+        "id": "Fk6QzHiE8AwQnJYG",
+        "name": "Abenezer Tadiyos  <babig7633@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-04-02T17:36:19.004Z",
+    "createdAt": "2026-04-02T17:36:19.004Z",
+    "versionId": "9133a914-4467-4ae8-921d-ebbbdf5e376f",
+    "workflowId": "hc55q2zfas7gG1yu",
+    "nodes": [
+      {
+        "parameters": {
+          "updates": [
+            "message",
+            "callback_query"
+          ],
+          "additionalFields": {}
+        },
+        "id": "telegram-input",
+        "name": "Telegram Input",
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1,
+        "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          320,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+        },
+        "id": "event-normalizer",
+        "name": "Event Normalizer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "{\n  \"userId\": \"={{ $json.event.userId }}\",\n  \"chatId\": \"={{ $json.event.chatId }}\"\n}",
+          "options": {}
+        },
+        "id": "session-load",
+        "name": "Session Load",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          800,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nif (!event) {\n  try {\n    event = $item(0).$node['Event Normalizer'].json.event;\n  } catch {\n    event = null;\n  }\n}\nevent = event && typeof event === 'object' ? event : {};\nconst remoteSession = payload.session ?? payload.data?.session ?? null;\nconst remoteExists = payload.session?.exists ?? payload.data?.session?.exists ?? false;\nconst rawSessionData = remoteSession?.data ?? remoteSession;\nconst hasExistingSession = Boolean(remoteExists || (rawSessionData && typeof rawSessionData === 'object' && Object.keys(rawSessionData).length > 0));\nlet sellerId = '__SELLER_ID_FROM_ENV__';\nif (typeof $env !== 'undefined' && $env?.SELLER_ID) {\n  sellerId = String($env.SELLER_ID);\n}\nconst now = Date.now();\nconst baseSession = {\n  isNew: true,\n  session_version: 2,\n  chat_id: String(event.chatId ?? ''),\n  seller_id: sellerId,\n  language: null,\n  stage: 'idle',\n  resolved_flow: 'none',\n  tentative_flow: 'none',\n  next_action: null,\n  route_recommendation: 'stay_exploratory',\n  followup_round: 0,\n  last_asked_key: null,\n  collected_fields: {},\n  missing_information: [],\n  evidence_accumulated: 0,\n  message_history: [],\n  last_understanding_output: null,\n  last_rule_decision: null,\n  last_resolver_output: null,\n  shown_options: [],\n  selected_option: null,\n  ranking_order: [],\n  cheaper_option: null,\n  active_product_id: null,\n  deep_link_context: null,\n  callback_context: null,\n  lead_state: null,\n  notify_state: null,\n  handoff_state: null,\n  recovery_state: null,\n  error_count: 0,\n  updated_at: now,\n};\nconst session = hasExistingSession\n  ? {\n      ...baseSession,\n      ...(rawSessionData && typeof rawSessionData === 'object' ? rawSessionData : {}),\n      isNew: false,\n      chat_id: String((rawSessionData && rawSessionData.chat_id) || event.chatId || ''),\n      seller_id: String((rawSessionData && rawSessionData.seller_id) || sellerId),\n      language: rawSessionData && Object.prototype.hasOwnProperty.call(rawSessionData, 'language') ? rawSessionData.language : null,\n      session_version: 2,\n      updated_at: now,\n    }\n  : baseSession;\nreturn [{ json: { event, session } }];"
+        },
+        "id": "session-bootstrap",
+        "name": "Session Bootstrap",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1040,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.UNDERSTANDING_API_URL || $env.LLM_UNDERSTANDING_URL; if (!base) { throw new Error('Missing understanding URL env: UNDERSTANDING_API_URL or LLM_UNDERSTANDING_URL'); } return String(base).replace(/\\/$/, ''); })()}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"task\":\"understanding_layer\",\"prompt_version\":\"v2\",\"event\":$json.event,\"session\":$json.session,\"message_history\":Array.isArray($json.session?.message_history)?$json.session.message_history.slice(-8):[]}",
+          "options": {}
+        },
+        "id": "understanding-ai",
+        "name": "Understanding AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1280,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nlet session = payload.session ?? null;\ntry {\n  if (!event) {\n    event = $item(0).$node['Session Bootstrap'].json.event;\n  }\n  if (!session) {\n    session = $item(0).$node['Session Bootstrap'].json.session;\n  }\n} catch {}\n\nevent = event && typeof event === 'object' ? event : {};\nsession = session && typeof session === 'object' ? session : {};\n\nconst source = payload.understanding || payload.data || payload.result || payload;\nconst allowedUserNeed = ['exploration', 'recommendation', 'clarification', 'transaction', 'info_request', 'post_sale', 'exchange_inquiry'];\nconst allowedNextAction = ['clarify', 'ask_one_thing', 'suggest_options', 'answer_direct', 'push_to_mini_app', 'handoff', 'notify_me'];\nconst allowedTentativeFlow = ['buy_soft', 'exchange_soft', 'faq', 'support', 'none'];\nconst allowedRouteRecommendation = ['stay_exploratory', 'soft_buy', 'soft_exchange', 'strong_faq', 'strong_support'];\nconst allowedAskedKeys = ['budget_etb', 'model', 'condition', 'storage', 'old_phone_details'];\n\nconst toNumber = (value, fallback) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;\nconst clamp = (value, min, max) => Math.min(max, Math.max(min, value));\nconst pickEnum = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;\n\nconst normalized = {\n  user_need: pickEnum(source.user_need, allowedUserNeed, 'clarification'),\n  next_action: pickEnum(source.next_action, allowedNextAction, 'clarify'),\n  tentative_flow: pickEnum(source.tentative_flow, allowedTentativeFlow, 'none'),\n  confidence: clamp(toNumber(source.confidence, 0), 0, 1),\n  ambiguity: clamp(toNumber(source.ambiguity, 1), 0, 1),\n  missing_information: Array.isArray(source.missing_information) ? source.missing_information.filter((v) => allowedAskedKeys.includes(v)) : [],\n  route_recommendation: pickEnum(source.route_recommendation, allowedRouteRecommendation, 'stay_exploratory'),\n  evidence_accumulated: Math.max(0, Math.min(5, Number.isInteger(source.evidence_accumulated) ? source.evidence_accumulated : 0)),\n  reference_resolution: {\n    refers_to: source.reference_resolution?.refers_to ?? null,\n    resolved_id: source.reference_resolution?.resolved_id ?? null,\n    resolved_entity: source.reference_resolution?.resolved_entity ?? null,\n  },\n  last_asked_key: allowedAskedKeys.includes(source.last_asked_key) ? source.last_asked_key : null,\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    event_type: event.event_type ?? 'text_message',\n    message: { text: event.text ?? '' },\n    callback_query: event.callback_query ?? null,\n    deep_link: event.deep_link ?? null,\n    ...normalized,\n    validation_meta: {\n      validated: true,\n      source: 'validation_node',\n      timestamp: Date.now(),\n    },\n  },\n}];"
+        },
+        "id": "validation-node",
+        "name": "Validation Node",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1520,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json;\nconst session = input.session || {};\nconst eventType = input.event_type || \"text_message\";\nconst message = input.message || {};\nconst callbackQuery = input.callback_query || null;\nconst deepLink = input.deep_link || null;\n\nconst understanding = {\n  user_need: input.user_need ?? \"clarification\",\n  next_action: input.next_action ?? \"clarify\",\n  tentative_flow: input.tentative_flow ?? \"none\",\n  confidence: typeof input.confidence === \"number\" ? input.confidence : 0,\n  ambiguity: typeof input.ambiguity === \"number\" ? input.ambiguity : 1,\n  missing_information: Array.isArray(input.missing_information) ? input.missing_information : [],\n  route_recommendation: input.route_recommendation ?? \"stay_exploratory\",\n  evidence_accumulated: Number.isInteger(input.evidence_accumulated) ? input.evidence_accumulated : 0,\n  reference_resolution: input.reference_resolution || {\n    refers_to: null,\n    resolved_id: null,\n    resolved_entity: null,\n  },\n  last_asked_key: input.last_asked_key ?? null,\n};\n\nconst text = (message.text || \"\").trim().toLowerCase();\nconst sessionResolvedFlow = session.resolved_flow || \"none\";\nconst sessionTentativeFlow = session.tentative_flow || \"none\";\nconst sessionSelectedOption = session.selected_option || null;\nconst shownOptions = Array.isArray(session.shown_options) ? session.shown_options : [];\nconst sessionLastAskedKey = session.last_asked_key || null;\nconst sessionEvidence = Number.isInteger(session.evidence_accumulated) ? session.evidence_accumulated : 0;\nconst errorCount = Number.isInteger(session.error_count) ? session.error_count : 0;\n\nlet decision = {\n  event_type: eventType,\n  resolved_flow: sessionResolvedFlow,\n  tentative_flow: understanding.tentative_flow || sessionTentativeFlow || \"none\",\n  route_locked: sessionResolvedFlow !== \"none\",\n  next_action: understanding.next_action || \"clarify\",\n  reply_mode: \"exploratory_question\",\n  handoff_triggered: false,\n  notify_triggered: false,\n  resolver_needed: true,\n  selected_option: sessionSelectedOption ? sessionSelectedOption.id || sessionSelectedOption : null,\n  last_asked_key: understanding.last_asked_key || sessionLastAskedKey || null,\n  decision_reason: \"default_initialization\",\n};\n\nconst hasStrongBuySignal = () => {\n  const buyWords = [\"buy\", \"new phone\", \"adis\", \"phone felige\", \"slk falige\", \"iphone\", \"samsung\"];\n  return buyWords.some(w => text.includes(w));\n};\n\nconst hasStrongExchangeSignal = () => {\n  const exchangeWords = [\"exchange\", \"swap\", \"trade in\", \"ልውውጥ\", \"ቀይረ\", \"ቀያየር\"];\n  return exchangeWords.some(w => text.includes(w)) || understanding.user_need === \"exchange_inquiry\";\n};\n\nconst hasFaqSignal = () => {\n  const faqWords = [\n    \"where\", \"location\", \"address\", \"yet\", \"agegnachu\",\n    \"warranty\", \"delivery\", \"payment\", \"hours\", \"policy\",\n    \"አድራሻ\", \"የት\", \"ዋስትና\", \"ክፍያ\", \"ዴሊቨሪ\"\n  ];\n  return faqWords.some(w => text.includes(w)) || understanding.tentative_flow === \"faq\";\n};\n\nconst hasSupportSignal = () => {\n  const supportWords = [\n    \"problem\", \"issue\", \"order\", \"delayed\", \"help\",\n    \"ችግር\", \"order\", \"support\"\n  ];\n  return supportWords.some(w => text.includes(w)) || understanding.tentative_flow === \"support\";\n};\n\nconst isShortRefinement = () => {\n  const refinementWords = [\n    \"128gb\", \"8/128\", \"8gb\", \"black\", \"last price\", \"cheaper\",\n    \"that one\", \"second one\", \"first one\", \"version\",\n    \"ጥቁር\", \"ያ\", \"ሁለተኛ\", \"ዋጋ\"\n  ];\n  return (\n    text.length > 0 &&\n    (\n      refinementWords.some(w => text.includes(w)) ||\n      understanding.reference_resolution?.refers_to !== null\n    )\n  );\n};\n\nconst wantsHuman = () => {\n  const words = [\"human\", \"admin\", \"owner\", \"person\", \"talk to\", \"ሰው\", \"አድሚን\"];\n  return words.some(w => text.includes(w));\n};\n\nif (eventType === \"start_reset\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"none\",\n    route_locked: false,\n    next_action: \"clarify\",\n    reply_mode: \"neutral_clarify\",\n    resolver_needed: false,\n    selected_option: null,\n    last_asked_key: null,\n    decision_reason: \"start_reset_event\",\n  };\n}\nelse if (eventType === \"deep_link_start\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"buy\",\n    tentative_flow: \"buy_soft\",\n    route_locked: false,\n    next_action: \"suggest_options\",\n    reply_mode: \"suggest_options\",\n    resolver_needed: true,\n    decision_reason: \"deep_link_start_event\",\n  };\n}\nelse if (eventType === \"callback_action\") {\n  const action = callbackQuery?.data || callbackQuery?.action || \"unknown_callback\";\n\n  if (String(action).includes(\"select_option\")) {\n    decision = {\n      ...decision,\n      resolved_flow: sessionResolvedFlow === \"none\" ? \"buy\" : sessionResolvedFlow,\n      tentative_flow: \"buy_soft\",\n      route_locked: true,\n      next_action: \"suggest_options\",\n      reply_mode: \"confirm_selection\",\n      resolver_needed: true,\n      decision_reason: \"callback_select_option\",\n    };\n  } else if (String(action).includes(\"confirm_order\")) {\n    decision = {\n      ...decision,\n      resolved_flow: \"buy\",\n      tentative_flow: \"buy_soft\",\n      route_locked: true,\n      next_action: \"answer_direct\",\n      reply_mode: \"confirm_selection\",\n      resolver_needed: true,\n      decision_reason: \"callback_confirm_order\",\n    };\n  } else if (String(action).includes(\"change_option\")) {\n    decision = {\n      ...decision,\n      resolved_flow: \"buy\",\n      tentative_flow: \"buy_soft\",\n      route_locked: true,\n      next_action: \"suggest_options\",\n      reply_mode: \"suggest_options\",\n      resolver_needed: true,\n      decision_reason: \"callback_change_option\",\n    };\n  } else if (String(action).includes(\"notify\")) {\n    decision = {\n      ...decision,\n      notify_triggered: true,\n      next_action: \"notify_me\",\n      reply_mode: \"notify_confirmation\",\n      resolver_needed: false,\n      decision_reason: \"callback_notify_me\",\n    };\n  } else if (String(action).includes(\"admin\") || String(action).includes(\"handoff\")) {\n    decision = {\n      ...decision,\n      handoff_triggered: true,\n      next_action: \"handoff\",\n      reply_mode: \"handoff_notice\",\n      resolver_needed: false,\n      decision_reason: \"callback_admin_handoff\",\n    };\n  } else {\n    decision = {\n      ...decision,\n      next_action: \"clarify\",\n      reply_mode: \"neutral_clarify\",\n      resolver_needed: false,\n      decision_reason: \"callback_unknown_safe_fallback\",\n    };\n  }\n}\n\nelse if (understanding.confidence < 0.7 || understanding.ambiguity > 0.4) {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"none\",\n    route_locked: false,\n    next_action: \"clarify\",\n    reply_mode: \"neutral_clarify\",\n    resolver_needed: false,\n    last_asked_key: null,\n    decision_reason: \"weak_understanding_fallback\",\n  };\n}\n\nelse if (isShortRefinement() && sessionResolvedFlow === \"buy\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"buy\",\n    tentative_flow: \"buy_soft\",\n    route_locked: true,\n    next_action: understanding.next_action === \"answer_direct\" ? \"answer_direct\" : \"suggest_options\",\n    reply_mode: \"suggest_options\",\n    resolver_needed: true,\n    selected_option: understanding.reference_resolution?.resolved_id || decision.selected_option,\n    decision_reason: \"short_buy_refinement_inherited\",\n  };\n}\nelse if (isShortRefinement() && sessionResolvedFlow === \"exchange\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"exchange\",\n    tentative_flow: \"exchange_soft\",\n    route_locked: true,\n    next_action: \"ask_one_thing\",\n    reply_mode: \"exploratory_question\",\n    resolver_needed: true,\n    decision_reason: \"short_exchange_refinement_inherited\",\n  };\n}\n\nelse if (hasFaqSignal()) {\n  decision = {\n    ...decision,\n    resolved_flow: \"faq\",\n    tentative_flow: \"faq\",\n    route_locked: true,\n    next_action: \"answer_direct\",\n    reply_mode: \"direct_answer\",\n    resolver_needed: true,\n    last_asked_key: null,\n    decision_reason: \"faq_override\",\n  };\n}\nelse if (hasSupportSignal()) {\n  decision = {\n    ...decision,\n    resolved_flow: \"support\",\n    tentative_flow: \"support\",\n    route_locked: true,\n    next_action: \"answer_direct\",\n    reply_mode: \"direct_answer\",\n    resolver_needed: true,\n    last_asked_key: null,\n    decision_reason: \"support_override\",\n  };\n}\n\nelse if (hasStrongExchangeSignal()) {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"exchange_soft\",\n    route_locked: false,\n    next_action: understanding.next_action || \"ask_one_thing\",\n    reply_mode: \"exploratory_question\",\n    resolver_needed: true,\n    decision_reason: \"strong_exchange_soft_route\",\n  };\n}\nelse if (hasStrongBuySignal() || understanding.tentative_flow === \"buy_soft\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"buy_soft\",\n    route_locked: false,\n    next_action: understanding.next_action || \"ask_one_thing\",\n    reply_mode: understanding.next_action === \"suggest_options\" ? \"suggest_options\" : \"exploratory_question\",\n    resolver_needed: true,\n    decision_reason: \"strong_buy_soft_route\",\n  };\n}\n\nif (\n  decision.resolved_flow === \"none\" &&\n  understanding.confidence >= 0.85 &&\n  understanding.ambiguity <= 0.25 &&\n  (understanding.evidence_accumulated >= 2 || sessionEvidence >= 2)\n) {\n  if (decision.tentative_flow === \"buy_soft\") {\n    decision.resolved_flow = \"buy\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_buy_by_evidence\";\n  } else if (decision.tentative_flow === \"exchange_soft\") {\n    decision.resolved_flow = \"exchange\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_exchange_by_evidence\";\n  } else if (decision.tentative_flow === \"faq\") {\n    decision.resolved_flow = \"faq\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_faq_by_evidence\";\n  } else if (decision.tentative_flow === \"support\") {\n    decision.resolved_flow = \"support\";\n    decision.route_locked = true;\n    decision.decision_reason = \"hard_lock_support_by_evidence\";\n  }\n}\n\nif (\n  decision.next_action === \"ask_one_thing\" &&\n  decision.last_asked_key &&\n  sessionLastAskedKey &&\n  decision.last_asked_key === sessionLastAskedKey &&\n  understanding.missing_information.length === 0\n) {\n  decision.next_action = \"clarify\";\n  decision.reply_mode = \"neutral_clarify\";\n  decision.last_asked_key = null;\n  decision.decision_reason = \"prevent_repeated_question\";\n}\n\nif (wantsHuman() || errorCount >= 3) {\n  decision.handoff_triggered = true;\n  decision.next_action = \"handoff\";\n  decision.reply_mode = \"handoff_notice\";\n  decision.resolver_needed = false;\n  decision.decision_reason = wantsHuman() ? \"explicit_handoff_request\" : \"error_threshold_handoff\";\n}\n\nif (decision.next_action === \"notify_me\") {\n  decision.notify_triggered = true;\n  decision.reply_mode = \"notify_confirmation\";\n  decision.resolver_needed = false;\n  decision.decision_reason = \"notify_triggered_by_decision\";\n}\n\nif (!decision.decision_reason || decision.decision_reason === \"default_initialization\") {\n  decision = {\n    ...decision,\n    resolved_flow: \"none\",\n    tentative_flow: \"none\",\n    route_locked: false,\n    next_action: \"clarify\",\n    reply_mode: \"neutral_clarify\",\n    resolver_needed: false,\n    decision_reason: \"default_exploratory_fallback\",\n  };\n}\n\nreturn [{ json: { ...input, rules_decision: decision } }];"
+        },
+        "id": "rules-layer",
+        "name": "Rules Layer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst rulesDecision = input.rules_decision && typeof input.rules_decision === 'object' ? input.rules_decision : {};\nconst understandingOutput = {\n  user_need: input.user_need ?? 'clarification',\n  next_action: input.next_action ?? 'clarify',\n  tentative_flow: input.tentative_flow ?? 'none',\n  confidence: typeof input.confidence === 'number' ? input.confidence : 0,\n  ambiguity: typeof input.ambiguity === 'number' ? input.ambiguity : 1,\n  missing_information: Array.isArray(input.missing_information) ? input.missing_information : [],\n  route_recommendation: input.route_recommendation ?? 'stay_exploratory',\n  evidence_accumulated: Number.isInteger(input.evidence_accumulated) ? input.evidence_accumulated : 0,\n  reference_resolution: input.reference_resolution && typeof input.reference_resolution === 'object'\n    ? input.reference_resolution\n    : { refers_to: null, resolved_id: null, resolved_entity: null },\n  last_asked_key: input.last_asked_key ?? null,\n};\nconst collectedFields = session.collected_fields && typeof session.collected_fields === 'object' ? session.collected_fields : {};\nconst referenceEntity = understandingOutput.reference_resolution?.resolved_entity && typeof understandingOutput.reference_resolution.resolved_entity === 'object'\n  ? understandingOutput.reference_resolution.resolved_entity\n  : null;\nconst rawBudget = collectedFields.budget_etb;\nconst parsedBudget = typeof rawBudget === 'number'\n  ? rawBudget\n  : typeof rawBudget === 'string' && rawBudget.trim() && !Number.isNaN(Number(rawBudget))\n    ? Number(rawBudget)\n    : null;\nconst constraints = {\n  brand: collectedFields.brand ?? referenceEntity?.brand ?? null,\n  model: collectedFields.model ?? referenceEntity?.model ?? null,\n  budget_etb: parsedBudget,\n  storage: collectedFields.storage ?? referenceEntity?.storage ?? null,\n  condition: collectedFields.condition ?? null,\n};\nconst rankingOrder = Array.isArray(session.ranking_order) ? session.ranking_order : [];\nconst shownOptions = Array.isArray(session.shown_options) ? session.shown_options : [];\nconst cheaperOptionId = session.cheaper_option ?? null;\nconst hasExchangeCore = Boolean(collectedFields.old_brand && collectedFields.old_model && collectedFields.condition);\nconst exchangeValidation = {\n  is_complete: hasExchangeCore,\n  missing_fields: [\n    ...(collectedFields.old_brand ? [] : ['old_brand']),\n    ...(collectedFields.old_model ? [] : ['old_model']),\n    ...(collectedFields.condition ? [] : ['condition']),\n  ],\n};\nconst resultMode = rulesDecision.next_action === 'notify_me' || rulesDecision.notify_triggered\n  ? 'notify_path'\n  : 'no_match_yet';\nconst resolverResult = {\n  result_mode: resultMode,\n  products: [],\n  ranked_options: {\n    shown_options: shownOptions,\n    ranking_order: rankingOrder,\n    cheaper_option_id: cheaperOptionId,\n  },\n  selected_option_resolved: null,\n  store_facts: {\n    location: null,\n    hours: null,\n    payment: null,\n    warranty: null,\n    delivery: null,\n    policy: null,\n  },\n  answer_facts: {\n    constraints,\n    active_product_id: session.active_product_id ?? null,\n    selected_option: rulesDecision.selected_option ?? null,\n  },\n  option_cards: [],\n  support_payload: rulesDecision.resolved_flow === 'support' || rulesDecision.handoff_triggered\n    ? {\n        chat_id: session.chat_id ?? null,\n        user_id: event.userId ?? null,\n        event_type: event.event_type ?? 'text_message',\n        requested_action: rulesDecision.next_action ?? null,\n      }\n    : null,\n  exchange_validation: exchangeValidation,\n  notify_prepared: Boolean(rulesDecision.notify_triggered || rulesDecision.next_action === 'notify_me'),\n  handoff_prepared: Boolean(rulesDecision.handoff_triggered || rulesDecision.next_action === 'handoff'),\n  reference_applied: Boolean(understandingOutput.reference_resolution?.resolved_id),\n  resolver_reason: !rulesDecision.resolver_needed\n    ? 'resolver_not_required_by_rules'\n    : rulesDecision.next_action === 'notify_me' || rulesDecision.notify_triggered\n      ? 'notify_path_prepared'\n      : 'waiting_for_live_business_data_wiring',\n  resolver_meta: {\n    source: 'business_data_resolver_placeholder',\n    uses_live_data: false,\n    requested_flow: rulesDecision.resolved_flow ?? 'none',\n    requested_action: rulesDecision.next_action ?? 'clarify',\n    selected_option: rulesDecision.selected_option ?? null,\n    last_asked_key: rulesDecision.last_asked_key ?? null,\n    timestamp: Date.now(),\n  },\n};\nreturn [{\n  json: {\n    ...input,\n    constraints,\n    resolver_result: resolverResult,\n  },\n}];"
+        },
+        "id": "business-data-resolver",
+        "name": "Business Data Resolver",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2000,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.REPLY_API_URL || $env.LLM_REPLY_URL; if (!base) { throw new Error('Missing reply URL env: REPLY_API_URL or LLM_REPLY_URL'); } return String(base).replace(/\\/$/, ''); })()}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "=({\"task\":\"reply_layer\",\"prompt_version\":\"v2\",\"event\":$json.event,\"session\":$json.session,\"rules_output\":$json.rules_decision,\"resolver_output\":$json.resolver_result})",
+          "options": {}
+        },
+        "id": "reply-ai",
+        "name": "Reply AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2240,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const base = (() => {\n  try {\n    return $item(0).$node['Business Data Resolver'].json ?? {};\n  } catch {\n    return {};\n  }\n})();\nconst replyPayload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst rulesDecision = base.rules_decision && typeof base.rules_decision === 'object' ? base.rules_decision : {};\nconst resolverResult = base.resolver_result && typeof base.resolver_result === 'object' ? base.resolver_result : {};\nconst replySource = replyPayload.reply && typeof replyPayload.reply === 'object'\n  ? replyPayload.reply\n  : replyPayload.data && typeof replyPayload.data === 'object'\n    ? replyPayload.data\n    : replyPayload.result && typeof replyPayload.result === 'object'\n      ? replyPayload.result\n      : replyPayload;\nconst fallbackReplyTextByMode = {\n  neutral_clarify: 'Please share one detail so I can guide you correctly.',\n  exploratory_question: 'What one detail should I use to narrow this down?',\n  direct_answer: 'Here is the information available right now.',\n  suggest_options: 'I can show the best matching options next.',\n  confirm_selection: 'Your selection is noted for the next step.',\n  handoff_notice: 'Our team will contact you shortly.',\n  notify_confirmation: 'Your notify request is noted.',\n};\nconst replyMode = rulesDecision.reply_mode ?? 'neutral_clarify';\nconst finalReply = {\n  reply_text: typeof replySource.reply_text === 'string' && replySource.reply_text.trim()\n    ? replySource.reply_text.trim()\n    : (fallbackReplyTextByMode[replyMode] ?? fallbackReplyTextByMode.neutral_clarify),\n  inline_keyboard: Array.isArray(replySource.inline_keyboard) ? replySource.inline_keyboard : null,\n  parse_mode: ['HTML', 'MarkdownV2'].includes(replySource.parse_mode) ? replySource.parse_mode : null,\n  reply_reason: typeof replySource.reply_reason === 'string' && replySource.reply_reason.trim()\n    ? replySource.reply_reason.trim()\n    : 'reply_placeholder_fallback',\n};\nconst updatedSession = {\n  ...session,\n  resolved_flow: rulesDecision.resolved_flow ?? session.resolved_flow ?? 'none',\n  tentative_flow: rulesDecision.tentative_flow ?? session.tentative_flow ?? 'none',\n  next_action: rulesDecision.next_action ?? session.next_action ?? null,\n  last_asked_key: rulesDecision.last_asked_key ?? session.last_asked_key ?? null,\n  missing_information: Array.isArray(base.missing_information)\n    ? base.missing_information\n    : (Array.isArray(session.missing_information) ? session.missing_information : []),\n  evidence_accumulated: Number.isInteger(base.evidence_accumulated)\n    ? base.evidence_accumulated\n    : (Number.isInteger(session.evidence_accumulated) ? session.evidence_accumulated : 0),\n  shown_options: Array.isArray(resolverResult.ranked_options?.shown_options)\n    ? resolverResult.ranked_options.shown_options\n    : (Array.isArray(session.shown_options) ? session.shown_options : []),\n  ranking_order: Array.isArray(resolverResult.ranked_options?.ranking_order)\n    ? resolverResult.ranked_options.ranking_order\n    : (Array.isArray(session.ranking_order) ? session.ranking_order : []),\n  cheaper_option: resolverResult.ranked_options?.cheaper_option_id ?? session.cheaper_option ?? null,\n  selected_option: rulesDecision.selected_option ?? session.selected_option ?? null,\n  active_product_id: resolverResult.answer_facts?.active_product_id ?? session.active_product_id ?? null,\n  last_understanding_output: {\n    user_need: base.user_need ?? null,\n    next_action: base.next_action ?? null,\n    tentative_flow: base.tentative_flow ?? null,\n    confidence: base.confidence ?? null,\n    ambiguity: base.ambiguity ?? null,\n    missing_information: Array.isArray(base.missing_information) ? base.missing_information : [],\n    route_recommendation: base.route_recommendation ?? null,\n    evidence_accumulated: base.evidence_accumulated ?? null,\n    reference_resolution: base.reference_resolution ?? null,\n    last_asked_key: base.last_asked_key ?? null,\n  },\n  last_rule_decision: rulesDecision,\n  last_resolver_output: resolverResult,\n  updated_at: Date.now(),\n};\nconst sideEffects = {\n  notify_requested: Boolean(rulesDecision.notify_triggered || rulesDecision.next_action === 'notify_me'),\n  handoff_requested: Boolean(rulesDecision.handoff_triggered || rulesDecision.next_action === 'handoff'),\n  notify_payload: rulesDecision.notify_triggered || rulesDecision.next_action === 'notify_me'\n    ? {\n        chat_id: updatedSession.chat_id ?? event.chatId ?? null,\n        user_id: event.userId ?? null,\n        selected_option: rulesDecision.selected_option ?? null,\n      }\n    : null,\n  handoff_payload: rulesDecision.handoff_triggered || rulesDecision.next_action === 'handoff'\n    ? {\n        chat_id: updatedSession.chat_id ?? event.chatId ?? null,\n        user_id: event.userId ?? null,\n        event_type: event.event_type ?? 'text_message',\n        decision_reason: rulesDecision.decision_reason ?? null,\n      }\n    : null,\n};\nconst telegramPayload = {\n  chat_id: event.chatId ?? updatedSession.chat_id ?? null,\n  text: finalReply.reply_text,\n  parse_mode: finalReply.parse_mode,\n  reply_markup: finalReply.inline_keyboard ? { inline_keyboard: finalReply.inline_keyboard } : null,\n};\nconst sessionUpdatePayload = {\n  userId: event.userId ?? null,\n  chatId: event.chatId ?? updatedSession.chat_id ?? null,\n  session: updatedSession,\n};\nreturn [{\n  json: {\n    ...base,\n    final_reply: finalReply,\n    reply_mode: replyMode,\n    reply_meta: {\n      source: 'side_effects_node',\n      prepared: true,\n      timestamp: Date.now(),\n    },\n    side_effects: sideEffects,\n    telegram_payload: telegramPayload,\n    session_update_payload: sessionUpdatePayload,\n  },\n}];"
+        },
+        "id": "side-effects",
+        "name": "Side Effects",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2480,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const explicit = $env.TELEGRAM_SEND_URL; if (explicit) { return String(explicit).replace(/\\/$/, ''); } const base = $env.TELEGRAM_BOT_API_BASE_URL || $env.TELEGRAM_API_BASE_URL; if (!base) { throw new Error('Missing Telegram send URL env: TELEGRAM_SEND_URL or TELEGRAM_BOT_API_BASE_URL or TELEGRAM_API_BASE_URL'); } return String(base).replace(/\\/$/, '') + '/sendMessage'; })()}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "=(() => { const payload = { chat_id: $json.telegram_payload.chat_id, text: $json.telegram_payload.text }; if ($json.telegram_payload.parse_mode) { payload.parse_mode = $json.telegram_payload.parse_mode; } if ($json.telegram_payload.reply_markup) { payload.reply_markup = $json.telegram_payload.reply_markup; } return payload; })()",
+          "options": {}
+        },
+        "id": "telegram-send",
+        "name": "Telegram Send",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2720,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "=({\"userId\":$item(0).$node['Side Effects'].json.session_update_payload.userId,\"chatId\":$item(0).$node['Side Effects'].json.session_update_payload.chatId,\"session\":$item(0).$node['Side Effects'].json.session_update_payload.session})",
+          "options": {}
+        },
+        "id": "session-save",
+        "name": "Session Save",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2960,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Telegram Input": {
+        "main": [
+          [
+            {
+              "node": "Event Normalizer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Event Normalizer": {
+        "main": [
+          [
+            {
+              "node": "Session Load",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Load": {
+        "main": [
+          [
+            {
+              "node": "Session Bootstrap",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Bootstrap": {
+        "main": [
+          [
+            {
+              "node": "Understanding AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Understanding AI": {
+        "main": [
+          [
+            {
+              "node": "Validation Node",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validation Node": {
+        "main": [
+          [
+            {
+              "node": "Rules Layer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rules Layer": {
+        "main": [
+          [
+            {
+              "node": "Business Data Resolver",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Business Data Resolver": {
+        "main": [
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Reply AI": {
+        "main": [
+          [
+            {
+              "node": "Side Effects",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Side Effects": {
+        "main": [
+          [
+            {
+              "node": "Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Telegram Send": {
+        "main": [
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Abenezer Tadiyos ",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-04-02T17:36:19.904Z",
+        "id": 1,
+        "workflowId": "hc55q2zfas7gG1yu",
+        "versionId": "9133a914-4467-4ae8-921d-ebbbdf5e376f",
+        "event": "activated",
+        "userId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      }
+    ]
+  }
+}

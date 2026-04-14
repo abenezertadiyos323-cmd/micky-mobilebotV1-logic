@@ -1,0 +1,1 @@
+- **Business Data Resolver**: Removed FRAGILE `$node[RULES_NODE]` reference. Switched to reading directly from `$json`.

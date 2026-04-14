@@ -1,0 +1,2 @@
+- **Understanding AI**: Added `retryOnFail=true`, `maxTries=3` (which gives max 2 retries), and `onError=continueRegularOutput`.
+- **Reply AI**: Added `retryOnFail=true`, `maxTries=3` (which gives max 2 retries), and `onError=continueRegularOutput`.

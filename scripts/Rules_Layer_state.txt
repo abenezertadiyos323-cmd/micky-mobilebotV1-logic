@@ -1,0 +1,33 @@
+L2: const session = input.session && typeof input.session === 'object' ? input.session : {};
+L41: const shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)
+L42: ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)
+L44: const currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);
+L45: const currentFlow = session.conversation_state?.current_flow ?? null;
+L46: const currentTopic = session.conversation_state?.current_topic ?? null;
+L47: const existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};
+L80: || (Array.isArray(session.conversation_history) && session.conversation_history.length > 0)
+L101: const sessionModelLower = (currentInterest?.model ?? mergedConstraints.model ?? '').toLowerCase() || null;
+L104: && sessionModelLower
+L105: && !rawTextModel.includes(sessionModelLower)
+L106: && !sessionModelLower.includes(rawTextModel)
+L175: session_update: {
+L192: session_update: {
+L193: ...rules_output.session_update,
+L212: session_update: {
+L213: ...rules_output.session_update,
+L229: Number(session.message_count ?? 0) === 0
+L259: session_update: {
+L260: ...rules_output.session_update,
+L277: session_update: {
+L278: ...rules_output.session_update,
+L288: session.flow_context?.buy_flow?.current_interest
+L299: session_update: {
+L300: ...rules_output.session_update,
+L311: rules_output.session_update.collected_constraints = { budget_etb: mergedConstraints.budget_etb, brand: null, model: null, storage: null, condition: null };
+L318: session_update: {
+L319: ...rules_output.session_update,
+L323: reasoning: shouldContinueContext ? 'refinement_reuses_session_context' : 'refinement_with_model_switch',
+L329: rules_output.session_update.collected_constraints = { budget_etb: null, brand: null, model: null, storage: null, condition: null };
+L340: session_update: {
+L341: ...rules_output.session_update,
+L349: return [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];

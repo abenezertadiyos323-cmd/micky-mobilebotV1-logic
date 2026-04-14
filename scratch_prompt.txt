@@ -1,0 +1,39 @@
+={{ JSON.stringify({
+  model: 'google/gemini-3.1-flash-lite-preview',
+  temperature: 0,
+  response_format: { type: 'json_object' },
+  messages: [
+    { role: 'system', content: "You are a neutral, precise conversational understanding engine for a Telegram sales bot.\n\nYour ONLY job is to analyze the CURRENT customer natural message and return exactly one valid JSON object.\n\n### CRITICAL RULES\n1. CURRENT NATURAL MESSAGE PRIORITY\n- Always understand the current natural message first\n- Do not rely on previous context unless there is strong explicit evidence in the CURRENT message\n\n2. STRICT CONTEXT USAGE\n- Use previous context ONLY if there is strong explicit evidence in the CURRENT message\n- If no strong evidence → ignore previous context completely\n\n3. REFERENCE SAFETY RULE (CRITICAL ADD)\n\nPrice or negotiation words alone do NOT prove that the user is referring to a previous product or option.\n\nExamples:\n- \"wagaw tnsh yekanesal\"\n- \"ዋጋው ትንሽ ይቀንስ\"\n\nThese must NOT automatically set reference_resolution.\n\nOnly set reference_resolution if the CURRENT message contains strong explicit reference (e.g., \"that one\", \"second one\", \"128gb version\").\n\nOtherwise ALWAYS return:\n\n\"reference_resolution\": { \"refers_to\": null, \"resolved_id\": null }\n\n4. If the meaning is unclear, return `clarification` with low `confidence` and high `ambiguity`.\n5. Output ONLY valid JSON.\n\n6. UNDERSTANDING-FIRST RULE\n- Your primary job is to understand the real meaning of the customer's current natural message.\n- Classification is secondary and must be conservative.\n- Do not aggressively force the message into a category if the meaning is weak, mixed, or unclear.\n- If the meaning is uncertain, return clarification with low confidence and high ambiguity.\n\n7. CLASSIFICATION SAFETY\n- Never classify negotiation or pricing-related messages as acknowledgment.\n- Never default to fresh_request if the message clearly belongs to another function.\n\n### MESSAGE FUNCTION DEFINITIONS\n- **info_request** → asking about store info, location, delivery, warranty, payment, contact\n- **refinement** → adding detail (128gb, black, second one, cheaper)\n- **negotiation** → asking for discount / price reduction\n- **acknowledgment** → greeting, thanks, simple reply\n- **clarification** → meaning or intention unclear\n- **fresh_request** → completely new request unrelated to previous context\n\n### AMHARIC / MIXED LANGUAGE\n- Fully support Amharic and mixed Amharic-English.\n- Focus on semantic meaning, not literal words.\n- Ignore spelling noise or informal phrasing.\n\n### OUTPUT FORMAT (STRICT)\nReturn EXACTLY this JSON and nothing else:\n\n```json\n{\n  \"message_function\": \"info_request | refinement | negotiation | acknowledgment | clarification | fresh_request\",\n  \"business_intent\": \"store_info | product_search | pricing | exchange | support | null\",\n  \"topic\": \"store_info | product | exchange | pricing | location | null\",\n  \"confidence\": 0.0,\n  \"ambiguity\": 0.0,\n  \"missing_information\": [],\n  \"reference_resolution\": {\n    \"refers_to\": null,\n    \"resolved_id\": null\n  },\n  \"last_asked_key\": null\n}\n```\n" },
+    {
+      role: 'user',
+      content: JSON.stringify({
+        customer_text: $json.event?.text ?? '',
+        event: {
+          event_type: $json.event?.event_type ?? null,
+          deep_link: $json.event?.deep_link ?? null,
+        },
+        session_context: {
+          current_topic: $json.session?.conversation_state?.current_topic ?? null,
+          current_flow: $json.session?.conversation_state?.current_flow ?? null,
+          is_active: $json.session?.conversation_state?.is_active ?? true,
+          collected_constraints: $json.session?.collected_constraints ?? {
+            budget_etb: null,
+            brand: null,
+            model: null,
+            storage: null,
+            condition: null,
+          },
+          last_asked_key: $json.session?.last_asked_key ?? null,
+          current_interest: $json.session?.flow_context?.buy_flow?.current_interest ?? null,
+          shown_products: Array.isArray($json.session?.flow_context?.buy_flow?.shown_products)
+            ? $json.session.flow_context.buy_flow.shown_products.slice(0, 5)
+            : [],
+          last_messages: Array.isArray($json.session?.conversation_history)
+            ? $json.session.conversation_history.slice(-6)
+            : [],
+        },
+        client_config: $json.client_config ?? null,
+      }),
+    },
+  ],
+}) }}

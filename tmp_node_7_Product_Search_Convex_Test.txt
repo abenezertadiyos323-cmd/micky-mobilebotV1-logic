@@ -1,0 +1,22 @@
+NODE 7: Product Search (Convex Test)
+TYPE: n8n-nodes-base.httpRequest
+
+{
+  "method": "POST",
+  "url": "={{ \"https://fastidious-schnauzer-265.convex.site/api/products/search\" }}",
+  "authentication": "predefinedCredentialType",
+  "nodeCredentialType": "httpHeaderAuth",
+  "sendHeaders": true,
+  "headerParameters": {
+    "parameters": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      }
+    ]
+  },
+  "sendBody": true,
+  "specifyBody": "json",
+  "jsonBody": "={{ JSON.stringify({\n  sellerId: 'tedytech',\n  phoneType: (() => {\n    const cleanPhoneType = (value) => {\n      if (typeof value !== 'string') return null;\n      const normalized = value\n        .replace(/\\b(32|64|128|256|512|1024)\\s*gb\\b/ig, ' ')\n        .replace(/\\b(iphone|samsung|pixel|redmi|xiaomi|tecno|infinix|oppo|vivo|realme|itel|nokia)(\\d)/ig, '$1 $2')\n        .replace(/\\b(pro)(max)\\b/ig, '$1 $2')\n        .replace(/\\s+/g, ' ')\n        .trim();\n      return normalized || null;\n    };\n    const text = String($json.event?.text || '').trim();\n    const extractFromText = (value) => {\n      const source = String(value || '').trim();\n      if (!source) return null;\n      const match = source.match(/\\b(?:iphone\\s*\\d+(?:\\s*(?:pro\\s*max|pro|max|plus|mini))?|samsung\\s*[a-z0-9+ ]+|pixel\\s*[a-z0-9+ ]+|redmi\\s*[a-z0-9+ ]+|xiaomi\\s*[a-z0-9+ ]+|tecno\\s*[a-z0-9+ ]+|infinix\\s*[a-z0-9+ ]+|oppo\\s*[a-z0-9+ ]+|vivo\\s*[a-z0-9+ ]+|realme\\s*[a-z0-9+ ]+|itel\\s*[a-z0-9+ ]+|nokia\\s*[a-z0-9+ ]+)\\b/i);\n      return cleanPhoneType(match ? match[0] : null);\n    };\n    const explicit = cleanPhoneType($json.rules_output?.resolver_input?.resolved_product_name || null);\n    if (explicit) return explicit;\n    const fromText = extractFromText(text);\n    if (fromText) return fromText;\n    const ref = $json.understanding_output?.reference_resolution?.refers_to;\n    if (typeof ref === 'string') {\n      const normalized = cleanPhoneType(ref);\n      const blocked = ['desired_phone', 'current_phone', 'last_shown_option', 'cheaper_option', 'previous_selection', 'none'];\n      if (normalized && !blocked.includes(normalized.toLowerCase())) return normalized;\n    }\n    const fromContext = cleanPhoneType(([\n      $json.rules_output?.resolver_input?.product_context?.brand,\n      $json.rules_output?.resolver_input?.product_context?.model,\n    ].filter(Boolean).join(' ').trim() || [\n      $json.session?.collected_constraints?.brand,\n      $json.session?.collected_constraints?.model,\n    ].filter(Boolean).join(' ').trim()));\n    if (fromContext) return fromContext;\n    return cleanPhoneType(text) || text;\n  })(),\n}) }}",
+  "options": {}
+}

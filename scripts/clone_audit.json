@@ -1,0 +1,34 @@
+{
+  "client_leakage": [
+    "tedytech",
+    "tedy"
+  ],
+  "industry_coupling": [
+    "iphone",
+    "samsung",
+    "xiaomi",
+    "pixel",
+    "phone",
+    "storage",
+    "ram",
+    "condition"
+  ],
+  "contexts": [
+    {
+      "term": "tedytech",
+      "matches": [
+        "hgbozjr8x\", \"name\": \"telegram_tedytech_customer\"}}, \"position\": [320",
+        "ercase();\\n    }\\n    return 'tedytech';\\n  })(),\\n  phonetype: (() ",
+        "hgbozjr8x\", \"name\": \"telegram_tedytech_customer\"}}, \"position\": [800"
+      ]
+    },
+    {
+      "term": "tedy",
+      "matches": [
+        "hgbozjr8x\", \"name\": \"telegram_tedytech_customer\"}}, \"position\": ",
+        "ercase();\\n    }\\n    return 'tedytech';\\n  })(),\\n  phonetype: ",
+        "hgbozjr8x\", \"name\": \"telegram_tedytech_customer\"}}, \"position\": "
+      ]
+    }
+  ]
+}

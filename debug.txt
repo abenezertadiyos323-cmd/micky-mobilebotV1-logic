@@ -1,0 +1,80 @@
+const payload = $json ?? {};
+let event = payload.event ?? null;
+if (!event) {
+  try {
+    event = $item(0).$node['Event Normalizer'].json.event;
+  } catch {
+    event = null;
+  }
+}
+
+event = event && typeof event === 'object' ? event : {};
+const remoteEnvelope = payload.session && typeof payload.session === 'object'
+  ? payload.session
+  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);
+const remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')
+  ? remoteEnvelope.data
+  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);
+const existing = remoteData && typeof remoteData === 'object' ? remoteData : {};
+const now = Date.now();
+const history = Array.isArray(existing.conversation_history)
+  ? existing.conversation_history
+  : (Array.isArray(existing.message_history) ? existing.message_history : []);
+const shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)
+  ? existing.flow_context.buy_flow.shown_products
+  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);
+const currentInterest = existing.flow_context?.buy_flow?.current_interest
+  ?? existing.active_product_id
+  ?? existing.selected_option
+  ?? null;
+const currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;
+const currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;
+const active = existing.conversation_state?.is_active;
+const baseCount = Number.isFinite(Number(existing.message_count))
+  ? Number(existing.message_count)
+  : history.filter((item) => item && typeof item === 'object').length;
+const session = {
+  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),
+  customer_id: String(existing.customer_id ?? event.userId ?? ''),
+  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,
+  last_message_at: now,
+  message_count: Math.max(0, baseCount),
+  conversation_state: {
+    current_topic: currentTopic,
+    current_flow: currentFlow,
+    is_active: typeof active === 'boolean' ? active : true,
+  },
+  flow_context: {
+    buy_flow: {
+      shown_products: shownProducts,
+      current_interest: currentInterest,
+    },
+  },
+  conversation_history: history.slice(-12).filter((item) => item && typeof item === 'object'),
+  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'
+    ? {
+        required: Boolean(existing.admin_escalation.required),
+        reason: existing.admin_escalation.reason ?? null,
+        status: existing.admin_escalation.status ?? null,
+      }
+    : {
+        required: false,
+        reason: null,
+        status: null,
+      },
+};
+const client_config = {
+  "store_name": "TedyTech",
+  "default_language": "am",
+  "supports_exchange": true,
+  "supports_finance": false,
+  "telegram_bot_name": "TedyTech Bot"
+};
+return [{
+  json: {
+    event,
+    session,
+    client_config,
+    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',
+  },
+}];

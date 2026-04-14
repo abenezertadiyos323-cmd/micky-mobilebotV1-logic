@@ -1,0 +1,14 @@
+[
+  {
+    "node": "Session Bootstrap",
+    "logs": [
+      "console.log(JSON.stringify({"
+    ]
+  },
+  {
+    "node": "Understanding JSON Guard - Pure Validator",
+    "logs": [
+      "console.log(JSON.stringify({"
+    ]
+  }
+]

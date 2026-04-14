@@ -1,0 +1,2893 @@
+{
+  "id": "636",
+  "finished": false,
+  "mode": "webhook",
+  "retryOf": null,
+  "retrySuccessId": null,
+  "status": "error",
+  "createdAt": "2026-04-10T20:41:58.847Z",
+  "startedAt": "2026-04-10T20:41:59.048Z",
+  "stoppedAt": "2026-04-10T20:42:04.698Z",
+  "deletedAt": null,
+  "workflowId": "hc55q2zfas7gG1yu",
+  "waitTill": null,
+  "storedAt": "db",
+  "data": {
+    "version": 1,
+    "startData": {},
+    "resultData": {
+      "error": {
+        "level": "warning",
+        "tags": {},
+        "description": "Bad Request: chat_id is empty",
+        "timestamp": 1775853724698,
+        "context": {},
+        "functionality": "regular",
+        "name": "NodeApiError",
+        "node": {
+          "parameters": {
+            "resource": "message",
+            "operation": "sendMessage",
+            "chatId": "={{ $json.event?.chat_id || $json.chat_id || $json.message?.chat?.id }}",
+            "text": "={{ $json.reply_text || 'Sorry, something went wrong. Please try again.' }}",
+            "replyMarkup": "none",
+            "additionalFields": {
+              "appendAttribution": false
+            }
+          },
+          "id": "telegram-send",
+          "name": "Telegram Send",
+          "type": "n8n-nodes-base.telegram",
+          "typeVersion": 1.2,
+          "credentials": {
+            "telegramApi": {
+              "id": "lFnI6XXhGbOZJr8X",
+              "name": "Telegram_TedyTech_Customer"
+            }
+          },
+          "position": [
+            3460,
+            300
+          ],
+          "webhookId": "e960efb8-ced2-4771-aab8-c66a41e232bb"
+        },
+        "messages": [
+          "400 - {\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: chat_id is empty\"}"
+        ],
+        "httpCode": "400",
+        "message": "Bad request - please check your parameters",
+        "stack": "NodeApiError: Bad request - please check your parameters\n    at ExecuteContext.apiRequest (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-nodes-base@file+packages+nodes-base_@aws-sdk+credential-providers@3.808.0_asn1.js@5_8da18263ca0574b0db58d4fefd8173ce/node_modules/n8n-nodes-base/nodes/Telegram/GenericFunctions.ts:230:9)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at ExecuteContext.execute (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-nodes-base@file+packages+nodes-base_@aws-sdk+credential-providers@3.808.0_asn1.js@5_8da18263ca0574b0db58d4fefd8173ce/node_modules/n8n-nodes-base/nodes/Telegram/Telegram.node.ts:2180:21)\n    at WorkflowExecute.executeNode (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:1045:8)\n    at WorkflowExecute.runNode (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:1224:11)\n    at /usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:1670:27\n    at /usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:2315:11"
+      },
+      "runData": {
+        "Telegram Input": [
+          {
+            "startTime": 1775853719054,
+            "executionIndex": 0,
+            "source": [],
+            "hints": [],
+            "executionTime": 0,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "update_id": 443924515,
+                      "message": {
+                        "message_id": 3173,
+                        "from": {
+                          "id": 8319120114,
+                          "is_bot": false,
+                          "first_name": "A",
+                          "last_name": "b",
+                          "username": "ESTFRYAN",
+                          "language_code": "en"
+                        },
+                        "chat": {
+                          "id": 8319120114,
+                          "first_name": "A",
+                          "last_name": "b",
+                          "username": "ESTFRYAN",
+                          "type": "private"
+                        },
+                        "date": 1775853718,
+                        "text": "/start",
+                        "entities": [
+                          {
+                            "offset": 0,
+                            "length": 6,
+                            "type": "bot_command"
+                          }
+                        ]
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Event Normalizer": [
+          {
+            "startTime": 1775853719055,
+            "executionIndex": 1,
+            "source": [
+              {
+                "previousNode": "Telegram Input",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 11,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Telegram Typing": [
+          {
+            "startTime": 1775853719066,
+            "executionIndex": 2,
+            "source": [
+              {
+                "previousNode": "Event Normalizer",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 154,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "ok": true,
+                      "result": true
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Session Load": [
+          {
+            "startTime": 1775853719221,
+            "executionIndex": 3,
+            "source": [
+              {
+                "previousNode": "Event Normalizer",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 328,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "session": {
+                        "exists": true,
+                        "data": {
+                          "admin_escalation": {
+                            "reason": "low_understanding_confidence",
+                            "required": true,
+                            "status": "pending"
+                          },
+                          "collected_constraints": {
+                            "brand": null,
+                            "budget_etb": 0,
+                            "condition": null,
+                            "model": null,
+                            "storage": null
+                          },
+                          "conversation_history": [
+                            {
+                              "role": "user",
+                              "text": "/start",
+                              "timestamp": 1775302785677
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u121d\u1295 \u12a0\u12ed\u1290\u1275 \u1235\u120d\u12ad \u12a5\u12e8\u1348\u1208\u1309 \u1290\u12cd?",
+                              "timestamp": 1775302788517
+                            },
+                            {
+                              "role": "user",
+                              "text": "Yet akebabi nachu",
+                              "timestamp": 1775302796826
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u121d\u1295 \u12a0\u12ed\u1290\u1275 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u121e\u12f4\u120d \u12a5\u12e8\u1348\u1208\u1309 \u1290\u12cd?",
+                              "timestamp": 1775302799786
+                            },
+                            {
+                              "role": "user",
+                              "text": "Adrashachun laklgn",
+                              "timestamp": 1775302821942
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12e8\u121d\u1295\u1348\u120d\u1308\u12cd\u1295 \u12e8\u1235\u120d\u12ad \u12a0\u12ed\u1290\u1275 \u12c8\u12ed\u121d \u121e\u12f4\u120d \u1262\u1290\u130d\u1229\u129d \u12e8\u1275\u129b\u12cd \u1245\u122d\u1295\u132b\u134b\u127d\u1295 \u12a5\u1295\u12f0\u121a\u1308\u129d \u1260\u1240\u120b\u1209 \u120d\u1290\u130d\u122d\u12ce \u12a5\u127d\u120b\u1208\u1201\u1362",
+                              "timestamp": 1775302825268
+                            },
+                            {
+                              "role": "user",
+                              "text": "Adis slk falige nbr",
+                              "timestamp": 1775302842334
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u121d\u1295 \u12a0\u12ed\u1290\u1275 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u121e\u12f4\u120d \u1290\u12cd \u12e8\u121a\u1348\u120d\u1309\u1275? \u12e8\u121e\u12f4\u1209\u1295 \u1235\u121d \u1262\u1290\u130d\u1229\u129d \u12eb\u1208\u1260\u1275\u1295 \u1201\u1294\u1273 \u120d\u1290\u130d\u122d\u12ce \u12a5\u127d\u120b\u1208\u1201\u1362",
+                              "timestamp": 1775302845478
+                            },
+                            {
+                              "role": "user",
+                              "text": "Iphone 15 alachu ?",
+                              "timestamp": 1775353292521
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "iPhone 15 \u1260\u12a0\u1201\u1291 \u1230\u12d3\u1275 \u1260\u12a5\u1303\u127d\u1295 \u12e8\u1208\u121d\u1362 \u120c\u120b \u12e8\u121a\u1348\u120d\u1309\u1275 \u121e\u12f4\u120d \u12a0\u1208?",
+                              "timestamp": 1775353296091
+                            },
+                            {
+                              "role": "user",
+                              "text": "Ok iphone 17 ale",
+                              "timestamp": 1775353310695
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "iPhone 17 Pro Max 256GB \u12a0\u12f2\u1235 \u12a0\u1208\u1295\u1363 \u12cb\u130b\u12cd 200,000 \u1265\u122d \u1290\u12cd\u1362 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d \u12ed\u1348\u120d\u130b\u1209 \u12c8\u12ed\u1235 \u1235\u1208 \u1235\u120d\u12a9 \u1270\u1328\u121b\u122a \u1218\u1228\u1303 \u12ed\u1348\u120d\u130b\u1209?",
+                              "timestamp": 1775353313871
+                            },
+                            {
+                              "role": "user",
+                              "text": "hey",
+                              "timestamp": 1775421711727
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 iPhone 17 Pro Max 256GB \u12a0\u12f2\u1235 \u12a0\u1208\u1295\u1362",
+                              "timestamp": 1775421715415
+                            },
+                            {
+                              "role": "user",
+                              "text": "hey",
+                              "timestamp": 1775421743071
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 iPhone 17 Pro Max 256GB \u12a0\u12f2\u1235 \u12a0\u1208\u1295\u1362",
+                              "timestamp": 1775421745532
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u1230\u120b\u121d! \u12c8\u12f0 TedyTech \u12a5\u1295\u12b3\u1295 \u1260\u12f0\u1205\u1293 \u1218\u1321\u1362 \u12a5\u1295\u12f4\u1275 \u120d\u1228\u12f3\u12ce\u1275 \u12a5\u127d\u120b\u1208\u1201?",
+                              "timestamp": 1775678394492
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 iPhone 13 Pro 256GB \u12a0\u12f2\u1235 \u12a0\u1208\u1295\u1362 \u12cb\u130b\u12cd 120,000 \u1265\u122d \u1290\u12cd\u1362 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d \u12ed\u1348\u120d\u130b\u1209 \u12c8\u12ed\u1235 \u1235\u1208 \u1235\u120d\u12a9 \u1270\u1328\u121b\u122a \u1218\u1228\u1303 \u12ed\u1348\u120d\u130b\u1209?",
+                              "timestamp": 1775678414419
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d (exchange) \u12e8\u121a\u1348\u120d\u1309\u1275 \u12e8\u1275\u129b\u12cd\u1295 \u121e\u12f4\u120d \u1290\u12cd? \u12e8\u121e\u12f4\u1209\u1295 \u1235\u121d\u1363 \u12e8\u121b\u1235\u1273\u12c8\u123b \u1218\u1320\u1295 (storage) \u12a5\u1293 \u12eb\u1208\u1260\u1275\u1295 \u1201\u1294\u1273 \u1262\u1290\u130d\u1229\u129d \u1218\u1228\u1303\u12cd\u1295 \u120d\u1230\u1325\u12ce \u12a5\u127d\u120b\u1208\u1201\u1362",
+                              "timestamp": 1775678510351
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 iPhone 13 Pro 256GB \u12a0\u12f2\u1235 \u12a0\u1208\u1295\u1362 \u12cb\u130b\u12cd 120,000 \u1265\u122d \u1290\u12cd\u1362 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d (exchange) \u12ed\u1348\u120d\u130b\u1209 \u12c8\u12ed\u1235 \u1270\u1328\u121b\u122a \u1218\u1228\u1303 \u12ed\u1348\u120d\u130b\u1209?",
+                              "timestamp": 1775678533309
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d (exchange) \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u121e\u12f4\u120d\u1363 \u12e8\u121b\u1235\u1273\u12c8\u123b \u1218\u1320\u1295 (storage) \u12a5\u1293 \u12eb\u1208\u1260\u1275\u1295 \u1201\u1294\u1273 \u1262\u1290\u130d\u1229\u129d \u1218\u1228\u1303\u12cd\u1295 \u120d\u1230\u1325\u12ce \u12a5\u127d\u120b\u1208\u1201\u1362",
+                              "timestamp": 1775678551390
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12e8\u121d\u1295\u1308\u129d\u1260\u1275 \u1266\u1273 \u12a0\u12f2\u1235 \u12a0\u1260\u1263\u1363 \u1266\u120c \u1218\u12f5\u1283\u1292\u12d3\u1208\u121d \u12a0\u12ab\u1263\u1262 \u1290\u12cd\u1362 \u120c\u120b \u1270\u1328\u121b\u122a \u1218\u1228\u1303 \u12ed\u1348\u120d\u130b\u1209?",
+                              "timestamp": 1775678944470
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u12a0\u12ce\u1363 \u12a0\u12f2\u1235 \u12a0\u1260\u1263\u1363 \u1266\u120c \u1218\u12f5\u1283\u1292\u12d3\u1208\u121d \u12a0\u12ab\u1263\u1262 \u12a5\u1295\u1308\u129b\u1208\u1295\u1362 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d (exchange) \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u121e\u12f4\u120d\u1363 \u12e8\u121b\u1235\u1273\u12c8\u123b \u1218\u1320\u1295 (storage) \u12a5\u1293 \u12eb\u1208\u1260\u1275\u1295 \u1201\u1294\u1273 \u1262\u1290\u130d\u1229\u129d \u1218\u1228\u1303\u12cd\u1295 \u120d\u1230\u1325\u12ce \u12a5\u127d\u120b\u1208\u1201\u1362",
+                              "timestamp": 1775678966443
+                            },
+                            {
+                              "role": "assistant",
+                              "text": "\u1235\u1208 Samsung Galaxy A32 \u134d\u120b\u130e\u1275\u12ce \u12a5\u1293\u1218\u1230\u130d\u1293\u1208\u1295\u1362 \u1235\u120d\u12ad\u12ce\u1295 \u1208\u1218\u1240\u12e8\u122d (exchange)\u1363 \u12a5\u1263\u12ad\u12ce \u1235\u120d\u12ad\u12ce\u1295 \u12ed\u12d8\u12cd \u1266\u120c \u1218\u12f5\u1283\u1292\u12d3\u1208\u121d \u12a0\u12ab\u1263\u1262 \u12c8\u12f0\u121a\u1308\u1298\u12cd \u1231\u1243\u127d\u1295 \u12ed\u121d\u1321\u1362 \u1235\u120d\u12ad\u12ce\u1295 \u1260\u12a0\u12ab\u120d \u12a0\u12ed\u1270\u1295 \u1275\u12ad\u12ad\u1208\u129b\u12cd\u1295 \u12e8\u12cb\u130b \u120d\u12e9\u1290\u1275 \u120d\u1295\u1290\u130d\u122d\u12ce \u12a5\u1295\u127d\u120b\u1208\u1295\u1362",
+                              "timestamp": 1775738001232
+                            }
+                          ],
+                          "conversation_state": {
+                            "current_flow": null,
+                            "current_topic": null,
+                            "is_active": true
+                          },
+                          "created_at": 1775298419568,
+                          "customer_id": "8319120114",
+                          "flow_context": {
+                            "buy_flow": {
+                              "current_interest": null,
+                              "shown_products": [
+                                {
+                                  "brand": null,
+                                  "condition": "New",
+                                  "id": "jn7esgr26avk5mtzn3hpf1pmz1827622",
+                                  "model": "Iphone 17 pro max",
+                                  "price_etb": 200000,
+                                  "ram": "8",
+                                  "raw": {
+                                    "_creationTime": 1772572179724.5454,
+                                    "_id": "jn7esgr26avk5mtzn3hpf1pmz1827622",
+                                    "condition": "New",
+                                    "createdAt": 1772572179724,
+                                    "createdBy": "8319120114",
+                                    "exchangeEnabled": false,
+                                    "images": [
+                                      "https://fastidious-schnauzer-265.convex.cloud/api/storage/479c973d-21a1-408f-b1fa-9bfb8b3be164"
+                                    ],
+                                    "isArchived": false,
+                                    "phoneType": "Iphone 17 pro max",
+                                    "price": 200000,
+                                    "ram": "8",
+                                    "searchNormalized": "iphone 17 pro max 256 8 new",
+                                    "searchText": "iphone 17 pro max 256 8 new",
+                                    "stockQuantity": 10,
+                                    "storage": "256",
+                                    "type": "phone",
+                                    "updatedAt": 1772572179724,
+                                    "updatedBy": "8319120114"
+                                  },
+                                  "stock_quantity": 10,
+                                  "stock_status": "in_stock",
+                                  "storage": "256GB"
+                                }
+                              ]
+                            }
+                          },
+                          "last_asked_key": null,
+                          "last_message_at": 1775738001232,
+                          "message_count": 20,
+                          "session_id": "sess_8319120114"
+                        }
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Session Bootstrap": [
+          {
+            "startTime": 1775853719550,
+            "executionIndex": 4,
+            "source": [
+              {
+                "previousNode": "Session Load",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 12,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "session_source": "remote"
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Callback Action?": [
+          {
+            "startTime": 1775853719562,
+            "executionIndex": 5,
+            "source": [
+              {
+                "previousNode": "Session Bootstrap",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 1,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [],
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "session_source": "remote"
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Understanding AI": [
+          {
+            "startTime": 1775853719563,
+            "executionIndex": 6,
+            "source": [
+              {
+                "previousNode": "Callback Action?",
+                "previousNodeOutput": 1,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 1098,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "id": "gen-1775853719-ipoUep3CEpSkvpSJlP37",
+                      "object": "chat.completion",
+                      "created": 1775853719,
+                      "model": "google/gemini-3.1-flash-lite-preview-20260303",
+                      "provider": "Google",
+                      "system_fingerprint": null,
+                      "choices": [
+                        {
+                          "index": 0,
+                          "logprobs": null,
+                          "finish_reason": "stop",
+                          "native_finish_reason": "STOP",
+                          "message": {
+                            "role": "assistant",
+                            "content": "{\n  \"message_function\": \"acknowledgment\",\n  \"business_intent\": \"null\",\n  \"topic\": \"null\",\n  \"confidence\": 1.0,\n  \"ambiguity\": 0.0,\n  \"missing_information\": [],\n  \"reference_resolution\": {\n    \"refers_to\": null,\n    \"resolved_id\": null\n  },\n  \"last_asked_key\": null\n}",
+                            "refusal": null,
+                            "reasoning": null,
+                            "reasoning_details": [
+                              {
+                                "type": "reasoning.encrypted",
+                                "data": "AY89a1/ikO+ewW5xkxpRnJ7jwxhpidlSbbm93zP7moLGYaiEvLq1oV8F+WST3Zfb1P8=",
+                                "format": "google-gemini-v1",
+                                "index": 0
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "usage": {
+                        "prompt_tokens": 870,
+                        "completion_tokens": 100,
+                        "total_tokens": 970,
+                        "cost": 0.0003675,
+                        "is_byok": false,
+                        "prompt_tokens_details": {
+                          "cached_tokens": 0,
+                          "cache_write_tokens": 0,
+                          "audio_tokens": 0,
+                          "video_tokens": 0
+                        },
+                        "cost_details": {
+                          "upstream_inference_cost": 0.0003675,
+                          "upstream_inference_prompt_cost": 0.0002175,
+                          "upstream_inference_completions_cost": 0.00015
+                        },
+                        "completion_tokens_details": {
+                          "reasoning_tokens": 0,
+                          "image_tokens": 0,
+                          "audio_tokens": 0
+                        }
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Understanding JSON Guard - Pure Validator": [
+          {
+            "startTime": 1775853720661,
+            "executionIndex": 7,
+            "source": [
+              {
+                "previousNode": "Understanding AI",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 10,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "understanding_output": {
+                        "message_function": "clarification",
+                        "business_intent": null,
+                        "topic": null,
+                        "confidence": 0,
+                        "ambiguity": 1,
+                        "missing_information": [],
+                        "reference_resolution": {
+                          "refers_to": null,
+                          "resolved_id": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "understanding_meta": {
+                        "validator_mode": "pure_schema_validator",
+                        "schema_mode": "minimal_guard_v2",
+                        "valid": false,
+                        "issues": [
+                          "business_intent_invalid",
+                          "topic_invalid"
+                        ],
+                        "raw_response": {
+                          "message_function": "acknowledgment",
+                          "business_intent": "null",
+                          "topic": "null",
+                          "confidence": 1,
+                          "ambiguity": 0,
+                          "missing_information": [],
+                          "reference_resolution": {
+                            "refers_to": null,
+                            "resolved_id": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "fallback_applied": true,
+                        "timestamp": 1775853720670
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Merge Node": [
+          {
+            "startTime": 1775853720671,
+            "executionIndex": 8,
+            "source": [
+              {
+                "previousNode": "Understanding JSON Guard - Pure Validator",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 7,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "understanding_output": {
+                        "message_function": "clarification",
+                        "business_intent": null,
+                        "topic": null,
+                        "confidence": 0,
+                        "ambiguity": 1,
+                        "missing_information": [],
+                        "reference_resolution": {
+                          "refers_to": null,
+                          "resolved_id": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "understanding_meta": {
+                        "validator_mode": "pure_schema_validator",
+                        "schema_mode": "minimal_guard_v2",
+                        "valid": false,
+                        "issues": [
+                          "business_intent_invalid",
+                          "topic_invalid"
+                        ],
+                        "raw_response": {
+                          "message_function": "acknowledgment",
+                          "business_intent": "null",
+                          "topic": "null",
+                          "confidence": 1,
+                          "ambiguity": 0,
+                          "missing_information": [],
+                          "reference_resolution": {
+                            "refers_to": null,
+                            "resolved_id": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "fallback_applied": true,
+                        "timestamp": 1775853720670
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Rules Layer": [
+          {
+            "startTime": 1775853720678,
+            "executionIndex": 9,
+            "source": [
+              {
+                "previousNode": "Merge Node",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 9,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "understanding_output": {
+                        "message_function": "clarification",
+                        "business_intent": null,
+                        "topic": null,
+                        "confidence": 0,
+                        "ambiguity": 1,
+                        "missing_information": [],
+                        "reference_resolution": {
+                          "refers_to": null,
+                          "resolved_id": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "understanding_meta": {
+                        "validator_mode": "pure_schema_validator",
+                        "schema_mode": "minimal_guard_v2",
+                        "valid": false,
+                        "issues": [
+                          "business_intent_invalid",
+                          "topic_invalid"
+                        ],
+                        "raw_response": {
+                          "message_function": "acknowledgment",
+                          "business_intent": "null",
+                          "topic": "null",
+                          "confidence": 1,
+                          "ambiguity": 0,
+                          "missing_information": [],
+                          "reference_resolution": {
+                            "refers_to": null,
+                            "resolved_id": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "fallback_applied": true,
+                        "timestamp": 1775853720670
+                      },
+                      "rules_output": {
+                        "reply_mode": "small_talk_redirect",
+                        "should_call_resolver": false,
+                        "resolver_input": {
+                          "flow": null,
+                          "product_context": {
+                            "brand": null,
+                            "model": null,
+                            "storage": null,
+                            "condition": null,
+                            "budget_etb": null,
+                            "current_interest": null,
+                            "current_topic": null,
+                            "current_flow": null
+                          },
+                          "missing_fields": [],
+                          "resolved_reference": null,
+                          "resolved_product_name": null
+                        },
+                        "session_update": {
+                          "last_topic": null,
+                          "flow_stage": null,
+                          "ambiguous_reference": null,
+                          "resolved_ambiguity": false,
+                          "collected_constraints": {
+                            "budget_etb": null,
+                            "brand": null,
+                            "model": null,
+                            "storage": null,
+                            "condition": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "confidence": 0,
+                        "reasoning": "start_reset_welcome"
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Should Resolve": [
+          {
+            "startTime": 1775853720687,
+            "executionIndex": 10,
+            "source": [
+              {
+                "previousNode": "Rules Layer",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 1,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [],
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "understanding_output": {
+                        "message_function": "clarification",
+                        "business_intent": null,
+                        "topic": null,
+                        "confidence": 0,
+                        "ambiguity": 1,
+                        "missing_information": [],
+                        "reference_resolution": {
+                          "refers_to": null,
+                          "resolved_id": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "understanding_meta": {
+                        "validator_mode": "pure_schema_validator",
+                        "schema_mode": "minimal_guard_v2",
+                        "valid": false,
+                        "issues": [
+                          "business_intent_invalid",
+                          "topic_invalid"
+                        ],
+                        "raw_response": {
+                          "message_function": "acknowledgment",
+                          "business_intent": "null",
+                          "topic": "null",
+                          "confidence": 1,
+                          "ambiguity": 0,
+                          "missing_information": [],
+                          "reference_resolution": {
+                            "refers_to": null,
+                            "resolved_id": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "fallback_applied": true,
+                        "timestamp": 1775853720670
+                      },
+                      "rules_output": {
+                        "reply_mode": "small_talk_redirect",
+                        "should_call_resolver": false,
+                        "resolver_input": {
+                          "flow": null,
+                          "product_context": {
+                            "brand": null,
+                            "model": null,
+                            "storage": null,
+                            "condition": null,
+                            "budget_etb": null,
+                            "current_interest": null,
+                            "current_topic": null,
+                            "current_flow": null
+                          },
+                          "missing_fields": [],
+                          "resolved_reference": null,
+                          "resolved_product_name": null
+                        },
+                        "session_update": {
+                          "last_topic": null,
+                          "flow_stage": null,
+                          "ambiguous_reference": null,
+                          "resolved_ambiguity": false,
+                          "collected_constraints": {
+                            "budget_etb": null,
+                            "brand": null,
+                            "model": null,
+                            "storage": null,
+                            "condition": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "confidence": 0,
+                        "reasoning": "start_reset_welcome"
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Set No-Resolver Output": [
+          {
+            "startTime": 1775853720688,
+            "executionIndex": 11,
+            "source": [
+              {
+                "previousNode": "Should Resolve",
+                "previousNodeOutput": 1,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 7,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {
+                        "event_type": "start_reset",
+                        "text": "/start",
+                        "chatId": "8319120114",
+                        "chat_id": "8319120114",
+                        "userId": "8319120114",
+                        "messageId": "3173",
+                        "timestamp": 1775853719065,
+                        "callback_query": null,
+                        "deep_link": null
+                      },
+                      "session": {
+                        "session_id": "sess_8319120114",
+                        "customer_id": "8319120114",
+                        "created_at": 1775298419568,
+                        "last_message_at": 1775853719561,
+                        "message_count": 0,
+                        "conversation_history": [],
+                        "conversation_state": {
+                          "current_topic": null,
+                          "current_flow": null,
+                          "is_active": true
+                        },
+                        "flow_context": {
+                          "buy_flow": {
+                            "shown_products": [],
+                            "current_interest": null
+                          }
+                        },
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null,
+                        "admin_escalation": {
+                          "required": true,
+                          "reason": "low_understanding_confidence",
+                          "status": "pending"
+                        }
+                      },
+                      "client_config": {
+                        "store_name": "TedyTech",
+                        "default_language": "am",
+                        "supports_exchange": true,
+                        "supports_finance": false,
+                        "telegram_bot_name": "TedyTech Bot",
+                        "sellerId": null,
+                        "store_address": null,
+                        "store_location_link": null,
+                        "support_contact": null,
+                        "warranty_policy": null,
+                        "exchange_rules": null
+                      },
+                      "understanding_output": {
+                        "message_function": "clarification",
+                        "business_intent": null,
+                        "topic": null,
+                        "confidence": 0,
+                        "ambiguity": 1,
+                        "missing_information": [],
+                        "reference_resolution": {
+                          "refers_to": null,
+                          "resolved_id": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "understanding_meta": {
+                        "validator_mode": "pure_schema_validator",
+                        "schema_mode": "minimal_guard_v2",
+                        "valid": false,
+                        "issues": [
+                          "business_intent_invalid",
+                          "topic_invalid"
+                        ],
+                        "raw_response": {
+                          "message_function": "acknowledgment",
+                          "business_intent": "null",
+                          "topic": "null",
+                          "confidence": 1,
+                          "ambiguity": 0,
+                          "missing_information": [],
+                          "reference_resolution": {
+                            "refers_to": null,
+                            "resolved_id": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "fallback_applied": true,
+                        "timestamp": 1775853720670
+                      },
+                      "rules_output": {
+                        "reply_mode": "small_talk_redirect",
+                        "should_call_resolver": false,
+                        "resolver_input": {
+                          "flow": null,
+                          "product_context": {
+                            "brand": null,
+                            "model": null,
+                            "storage": null,
+                            "condition": null,
+                            "budget_etb": null,
+                            "current_interest": null,
+                            "current_topic": null,
+                            "current_flow": null
+                          },
+                          "missing_fields": [],
+                          "resolved_reference": null,
+                          "resolved_product_name": null
+                        },
+                        "session_update": {
+                          "last_topic": null,
+                          "flow_stage": null,
+                          "ambiguous_reference": null,
+                          "resolved_ambiguity": false,
+                          "collected_constraints": {
+                            "budget_etb": null,
+                            "brand": null,
+                            "model": null,
+                            "storage": null,
+                            "condition": null
+                          },
+                          "last_asked_key": null
+                        },
+                        "confidence": 0,
+                        "reasoning": "start_reset_welcome"
+                      },
+                      "resolver_output": null
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Reply AI": [
+          {
+            "startTime": 1775853720696,
+            "executionIndex": 12,
+            "source": [
+              {
+                "previousNode": "Set No-Resolver Output",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 3940,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "id": "gen-1775853720-F8AJkmwnr2CjwNpg5xTm",
+                      "object": "chat.completion",
+                      "created": 1775853720,
+                      "model": "google/gemini-3.1-flash-lite-preview-20260303",
+                      "provider": "Google AI Studio",
+                      "system_fingerprint": null,
+                      "choices": [
+                        {
+                          "index": 0,
+                          "logprobs": null,
+                          "finish_reason": "stop",
+                          "native_finish_reason": "STOP",
+                          "message": {
+                            "role": "assistant",
+                            "content": "{\"reply_text\":\"\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362\"}",
+                            "refusal": null,
+                            "reasoning": null,
+                            "reasoning_details": [
+                              {
+                                "type": "reasoning.encrypted",
+                                "data": "EjQKMgG+Pvb7W4+jlaayeoBkvfeSdKyFx3/imEcQYvr56WT+kXTV5mKB2d/ECxNpXvFdXkQR",
+                                "format": "google-gemini-v1",
+                                "index": 0
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "usage": {
+                        "prompt_tokens": 1873,
+                        "completion_tokens": 35,
+                        "total_tokens": 1908,
+                        "cost": 0.00052075,
+                        "is_byok": false,
+                        "prompt_tokens_details": {
+                          "cached_tokens": 0,
+                          "cache_write_tokens": 0,
+                          "audio_tokens": 0,
+                          "video_tokens": 0
+                        },
+                        "cost_details": {
+                          "upstream_inference_cost": 0.00052075,
+                          "upstream_inference_prompt_cost": 0.00046825,
+                          "upstream_inference_completions_cost": 5.25e-05
+                        },
+                        "completion_tokens_details": {
+                          "reasoning_tokens": 0,
+                          "image_tokens": 0,
+                          "audio_tokens": 0
+                        }
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Validation": [
+          {
+            "startTime": 1775853724636,
+            "executionIndex": 13,
+            "source": [
+              {
+                "previousNode": "Reply AI",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 12,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {},
+                      "chat_id": null,
+                      "safe_to_send": true,
+                      "reply_text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                      "used_fallback": false,
+                      "raw_reply_text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                      "telegram_payload": {
+                        "chat_id": null
+                      },
+                      "session_update_payload": {
+                        "userId": null,
+                        "chatId": null,
+                        "session": {
+                          "last_message_at": 1775853724647,
+                          "message_count": 1,
+                          "conversation_history": [
+                            {
+                              "role": "assistant",
+                              "text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                              "timestamp": 1775853724647
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        ],
+        "Safe To Send": [
+          {
+            "startTime": 1775853724648,
+            "executionIndex": 14,
+            "source": [
+              {
+                "previousNode": "Validation",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 1,
+            "executionStatus": "success",
+            "data": {
+              "main": [
+                [
+                  {
+                    "json": {
+                      "event": {},
+                      "chat_id": null,
+                      "safe_to_send": true,
+                      "reply_text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                      "used_fallback": false,
+                      "raw_reply_text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                      "telegram_payload": {
+                        "chat_id": null
+                      },
+                      "session_update_payload": {
+                        "userId": null,
+                        "chatId": null,
+                        "session": {
+                          "last_message_at": 1775853724647,
+                          "message_count": 1,
+                          "conversation_history": [
+                            {
+                              "role": "assistant",
+                              "text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                              "timestamp": 1775853724647
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "pairedItem": {
+                      "item": 0
+                    }
+                  }
+                ],
+                []
+              ]
+            }
+          }
+        ],
+        "Telegram Send": [
+          {
+            "startTime": 1775853724649,
+            "executionIndex": 15,
+            "source": [
+              {
+                "previousNode": "Safe To Send",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ],
+            "hints": [],
+            "executionTime": 49,
+            "executionStatus": "error",
+            "error": {
+              "level": "warning",
+              "tags": {},
+              "description": "Bad Request: chat_id is empty",
+              "timestamp": 1775853724698,
+              "context": {},
+              "functionality": "regular",
+              "name": "NodeApiError",
+              "node": {
+                "parameters": {
+                  "resource": "message",
+                  "operation": "sendMessage",
+                  "chatId": "={{ $json.event?.chat_id || $json.chat_id || $json.message?.chat?.id }}",
+                  "text": "={{ $json.reply_text || 'Sorry, something went wrong. Please try again.' }}",
+                  "replyMarkup": "none",
+                  "additionalFields": {
+                    "appendAttribution": false
+                  }
+                },
+                "id": "telegram-send",
+                "name": "Telegram Send",
+                "type": "n8n-nodes-base.telegram",
+                "typeVersion": 1.2,
+                "credentials": {
+                  "telegramApi": {
+                    "id": "lFnI6XXhGbOZJr8X",
+                    "name": "Telegram_TedyTech_Customer"
+                  }
+                },
+                "position": [
+                  3460,
+                  300
+                ],
+                "webhookId": "e960efb8-ced2-4771-aab8-c66a41e232bb"
+              },
+              "messages": [
+                "400 - {\"ok\":false,\"error_code\":400,\"description\":\"Bad Request: chat_id is empty\"}"
+              ],
+              "httpCode": "400",
+              "message": "Bad request - please check your parameters",
+              "stack": "NodeApiError: Bad request - please check your parameters\n    at ExecuteContext.apiRequest (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-nodes-base@file+packages+nodes-base_@aws-sdk+credential-providers@3.808.0_asn1.js@5_8da18263ca0574b0db58d4fefd8173ce/node_modules/n8n-nodes-base/nodes/Telegram/GenericFunctions.ts:230:9)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at ExecuteContext.execute (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-nodes-base@file+packages+nodes-base_@aws-sdk+credential-providers@3.808.0_asn1.js@5_8da18263ca0574b0db58d4fefd8173ce/node_modules/n8n-nodes-base/nodes/Telegram/Telegram.node.ts:2180:21)\n    at WorkflowExecute.executeNode (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:1045:8)\n    at WorkflowExecute.runNode (/usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:1224:11)\n    at /usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:1670:27\n    at /usr/local/lib/node_modules/n8n/node_modules/.pnpm/n8n-core@file+packages+core_@opentelemetry+api@1.9.0_@opentelemetry+exporter-trace-otlp_9f358c3eeaef0d2736f54ac9757ada43/node_modules/n8n-core/src/execution-engine/workflow-execute.ts:2315:11"
+            }
+          }
+        ]
+      },
+      "lastNodeExecuted": "Telegram Send"
+    },
+    "executionData": {
+      "contextData": {},
+      "nodeExecutionStack": [
+        {
+          "node": {
+            "parameters": {
+              "resource": "message",
+              "operation": "sendMessage",
+              "chatId": "={{ $json.event?.chat_id || $json.chat_id || $json.message?.chat?.id }}",
+              "text": "={{ $json.reply_text || 'Sorry, something went wrong. Please try again.' }}",
+              "replyMarkup": "none",
+              "additionalFields": {
+                "appendAttribution": false
+              }
+            },
+            "id": "telegram-send",
+            "name": "Telegram Send",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "credentials": {
+              "telegramApi": {
+                "id": "lFnI6XXhGbOZJr8X",
+                "name": "Telegram_TedyTech_Customer"
+              }
+            },
+            "position": [
+              3460,
+              300
+            ],
+            "webhookId": "e960efb8-ced2-4771-aab8-c66a41e232bb"
+          },
+          "data": {
+            "main": [
+              [
+                {
+                  "json": {
+                    "event": {},
+                    "chat_id": null,
+                    "safe_to_send": true,
+                    "reply_text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                    "used_fallback": false,
+                    "raw_reply_text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                    "telegram_payload": {
+                      "chat_id": null
+                    },
+                    "session_update_payload": {
+                      "userId": null,
+                      "chatId": null,
+                      "session": {
+                        "last_message_at": 1775853724647,
+                        "message_count": 1,
+                        "conversation_history": [
+                          {
+                            "role": "assistant",
+                            "text": "\u12a5\u1295\u12b3\u1295 \u12c8\u12f0 TedyTech \u1260\u12f0\u1205\u1293 \u1218\u1321! \u12e8\u121a\u1348\u120d\u1309\u1275\u1295 \u1235\u120d\u12ad \u12c8\u12ed\u121d \u12a0\u1308\u120d\u130d\u120e\u1275 \u12ed\u1295\u1308\u1229\u129d\u1362",
+                            "timestamp": 1775853724647
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "pairedItem": {
+                    "item": 0
+                  }
+                }
+              ]
+            ]
+          },
+          "source": {
+            "main": [
+              {
+                "previousNode": "Safe To Send",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ]
+          }
+        },
+        {
+          "node": {
+            "name": "Admin Handoff Notify?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+              2260,
+              520
+            ],
+            "parameters": {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.rules_output.reply_mode }}",
+                    "rightValue": "handoff_admin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "options": {}
+            },
+            "id": "4519b087-baf3-4e06-9eba-897088956db3"
+          },
+          "data": {
+            "main": [
+              [
+                {
+                  "json": {
+                    "event": {
+                      "event_type": "start_reset",
+                      "text": "/start",
+                      "chatId": "8319120114",
+                      "chat_id": "8319120114",
+                      "userId": "8319120114",
+                      "messageId": "3173",
+                      "timestamp": 1775853719065,
+                      "callback_query": null,
+                      "deep_link": null
+                    },
+                    "session": {
+                      "session_id": "sess_8319120114",
+                      "customer_id": "8319120114",
+                      "created_at": 1775298419568,
+                      "last_message_at": 1775853719561,
+                      "message_count": 0,
+                      "conversation_history": [],
+                      "conversation_state": {
+                        "current_topic": null,
+                        "current_flow": null,
+                        "is_active": true
+                      },
+                      "flow_context": {
+                        "buy_flow": {
+                          "shown_products": [],
+                          "current_interest": null
+                        }
+                      },
+                      "collected_constraints": {
+                        "budget_etb": null,
+                        "brand": null,
+                        "model": null,
+                        "storage": null,
+                        "condition": null
+                      },
+                      "last_asked_key": null,
+                      "admin_escalation": {
+                        "required": true,
+                        "reason": "low_understanding_confidence",
+                        "status": "pending"
+                      }
+                    },
+                    "client_config": {
+                      "store_name": "TedyTech",
+                      "default_language": "am",
+                      "supports_exchange": true,
+                      "supports_finance": false,
+                      "telegram_bot_name": "TedyTech Bot",
+                      "sellerId": null,
+                      "store_address": null,
+                      "store_location_link": null,
+                      "support_contact": null,
+                      "warranty_policy": null,
+                      "exchange_rules": null
+                    },
+                    "understanding_output": {
+                      "message_function": "clarification",
+                      "business_intent": null,
+                      "topic": null,
+                      "confidence": 0,
+                      "ambiguity": 1,
+                      "missing_information": [],
+                      "reference_resolution": {
+                        "refers_to": null,
+                        "resolved_id": null
+                      },
+                      "last_asked_key": null
+                    },
+                    "understanding_meta": {
+                      "validator_mode": "pure_schema_validator",
+                      "schema_mode": "minimal_guard_v2",
+                      "valid": false,
+                      "issues": [
+                        "business_intent_invalid",
+                        "topic_invalid"
+                      ],
+                      "raw_response": {
+                        "message_function": "acknowledgment",
+                        "business_intent": "null",
+                        "topic": "null",
+                        "confidence": 1,
+                        "ambiguity": 0,
+                        "missing_information": [],
+                        "reference_resolution": {
+                          "refers_to": null,
+                          "resolved_id": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "fallback_applied": true,
+                      "timestamp": 1775853720670
+                    },
+                    "rules_output": {
+                      "reply_mode": "small_talk_redirect",
+                      "should_call_resolver": false,
+                      "resolver_input": {
+                        "flow": null,
+                        "product_context": {
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null,
+                          "budget_etb": null,
+                          "current_interest": null,
+                          "current_topic": null,
+                          "current_flow": null
+                        },
+                        "missing_fields": [],
+                        "resolved_reference": null,
+                        "resolved_product_name": null
+                      },
+                      "session_update": {
+                        "last_topic": null,
+                        "flow_stage": null,
+                        "ambiguous_reference": null,
+                        "resolved_ambiguity": false,
+                        "collected_constraints": {
+                          "budget_etb": null,
+                          "brand": null,
+                          "model": null,
+                          "storage": null,
+                          "condition": null
+                        },
+                        "last_asked_key": null
+                      },
+                      "confidence": 0,
+                      "reasoning": "start_reset_welcome"
+                    }
+                  },
+                  "pairedItem": {
+                    "item": 0
+                  }
+                }
+              ]
+            ]
+          },
+          "source": {
+            "main": [
+              {
+                "previousNode": "Rules Layer",
+                "previousNodeOutput": 0,
+                "previousNodeRun": 0
+              }
+            ]
+          }
+        }
+      ],
+      "metadata": {},
+      "waitingExecution": {},
+      "waitingExecutionSource": {},
+      "runtimeData": {
+        "version": 1,
+        "establishedAt": 1775853719053,
+        "source": "webhook",
+        "redaction": {
+          "version": 1,
+          "policy": "none"
+        },
+        "triggerNode": {
+          "name": "Telegram Input",
+          "type": "n8n-nodes-base.telegramTrigger"
+        }
+      }
+    },
+    "resumeToken": "2c555b03c04521f2a3a375048a8bb49419cd8f803e6c038b4747da62b915d680"
+  },
+  "workflowData": {
+    "id": "hc55q2zfas7gG1yu",
+    "name": "Abenier Bot Logic Base",
+    "active": true,
+    "activeVersionId": "313f7c30-cb4f-4b16-bba9-3afdf6ed14cc",
+    "isArchived": false,
+    "createdAt": "2026-04-02T17:36:18.951Z",
+    "updatedAt": "2026-04-10T20:40:15.322Z",
+    "nodes": [
+      {
+        "parameters": {
+          "telegramTriggerNotice": "",
+          "updates": [
+            "message",
+            "callback_query"
+          ],
+          "attachmentNotice": "",
+          "additionalFields": {}
+        },
+        "id": "telegram-input",
+        "name": "Telegram Input",
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1,
+        "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram_TedyTech_Customer"
+          }
+        },
+        "position": [
+          320,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      chat_id: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];",
+          "notice": ""
+        },
+        "id": "event-normalizer",
+        "name": "Event Normalizer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "curlImport": "",
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+          "authentication": "none",
+          "provideSslCertificates": false,
+          "sendQuery": false,
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ userId: $json.event?.userId ?? '', chatId: $json.event?.chatId ?? '' }) }}",
+          "options": {},
+          "infoMessage": ""
+        },
+        "id": "session-load",
+        "name": "Session Load",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          800,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\n\nconst readEventFromNode = (nodeName) => {\n  try {\n    const nodeRef = $(nodeName);\n    if (!nodeRef || !nodeRef.isExecuted) return null;\n    const candidate = nodeRef.first()?.json?.event;\n    return candidate && typeof candidate === 'object' ? candidate : null;\n  } catch {\n    return null;\n  }\n};\n\nif (!event || typeof event !== 'object') {\n  event = readEventFromNode('Event Normalizer')\n    ?? readEventFromNode('Event Loader')\n    ?? readEventFromNode('Unify Payload')\n    ?? readEventFromNode('Telegram Input')\n    ?? readEventFromNode('Telegram Trigger')\n    ?? null;\n}\n\nif (!event || typeof event !== 'object') {\n  event = { chatId: 0, error: 'trigger_event_lost' };\n  console.log(JSON.stringify({\n    node: 'Session Bootstrap',\n    warning: 'trigger_event_lost',\n    fallback_nodes: ['Event Normalizer', 'Event Loader', 'Unify Payload', 'Telegram Input', 'Telegram Trigger'],\n  }));\n}\n\nevent = event && typeof event === 'object' ? event : {};\nconst isStartReset = event.event_type === 'start_reset' || event.event_type === 'deep_link_start';\nconst remoteEnvelope = payload.session && typeof payload.session === 'object'\n  ? payload.session\n  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);\nconst remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')\n  ? remoteEnvelope.data\n  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);\nconst existing = remoteData && typeof remoteData === 'object' ? remoteData : {};\nconst now = Date.now();\nconst history = Array.isArray(existing.conversation_history)\n  ? existing.conversation_history\n  : (Array.isArray(existing.message_history) ? existing.message_history : []);\nconst shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)\n  ? existing.flow_context.buy_flow.shown_products\n  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);\nconst currentInterest = existing.flow_context?.buy_flow?.current_interest\n  ?? existing.active_product_id\n  ?? existing.selected_option\n  ?? null;\nconst currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;\nconst currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;\nconst active = existing.conversation_state?.is_active;\nconst baseCount = Number.isFinite(Number(existing.message_count))\n  ? Number(existing.message_count)\n  : history.filter((item) => item && typeof item === 'object').length;\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeBudget = (value) => {\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst currentInterestRecord = currentInterest && typeof currentInterest === 'object' ? currentInterest : {};\nconst existingConstraints = existing.collected_constraints && typeof existing.collected_constraints === 'object'\n  ? existing.collected_constraints\n  : {};\nconst collected_constraints = {\n  budget_etb: normalizeBudget(existingConstraints.budget_etb ?? existing.budget_etb ?? null),\n  brand: normalizeText(existingConstraints.brand ?? currentInterestRecord.brand ?? null),\n  model: normalizeText(existingConstraints.model ?? currentInterestRecord.model ?? currentInterestRecord.name ?? null),\n  storage: normalizeText(existingConstraints.storage ?? currentInterestRecord.storage ?? null),\n  condition: normalizeText(existingConstraints.condition ?? currentInterestRecord.condition ?? null),\n};\nconst session = {\n  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(existing.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,\n  last_message_at: now,\n  message_count: isStartReset ? 0 : Math.max(0, baseCount),\n  conversation_history: isStartReset ? [] : history.slice(-12).filter((item) => item && typeof item === 'object'),\n  conversation_state: {\n    current_topic: isStartReset ? null : currentTopic,\n    current_flow: isStartReset ? null : currentFlow,\n    is_active: typeof active === 'boolean' ? active : true,\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: isStartReset ? [] : shownProducts,\n      current_interest: isStartReset ? null : currentInterest,\n    },\n  },\n  collected_constraints: isStartReset\n    ? { budget_etb: null, brand: null, model: null, storage: null, condition: null }\n    : collected_constraints,\n  last_asked_key: isStartReset ? null : normalizeText(existing.last_asked_key ?? existing.last_asked_field ?? null),\n  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'\n    ? {\n        required: Boolean(existing.admin_escalation.required),\n        reason: existing.admin_escalation.reason ?? null,\n        status: existing.admin_escalation.status ?? null,\n      }\n    : {\n        required: false,\n        reason: null,\n        status: null,\n      },\n};\n// Read adminSettings from the upstream Session Load Convex response\nconst rawAdminSettings = (() => {\n  // adminSettings comes in through Session Load node's json output\n  try {\n    const loaded = $('Session Load').first()?.json;\n    if (loaded && loaded.adminSettings && typeof loaded.adminSettings === 'object') {\n      return loaded.adminSettings;\n    }\n  } catch {}\n  return null;\n})();\n\nconst client_config = {\n  \"store_name\": $env.STORE_NAME || rawAdminSettings?.storeName || $json.store_name || \"TedyTech\",\n  \"default_language\": $env.DEFAULT_LANG || \"am\",\n  \"supports_exchange\": true,\n  \"supports_finance\": false,\n  \"telegram_bot_name\": $env.BOT_NAME || $json.bot_name || \"TedyTech Bot\",\n  \"sellerId\": $env.SELLER_ID || $json.seller_id || null,\n  \"store_address\": rawAdminSettings?.storeAddress || null,\n  \"store_location_link\": rawAdminSettings?.storeLocationLink || null,\n  \"support_contact\": rawAdminSettings?.supportContact || null,\n  \"warranty_policy\": rawAdminSettings?.warrantyPolicy || null,\n  \"exchange_rules\": rawAdminSettings?.exchangeRules || null,\n};\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',\n  },\n}];",
+          "notice": ""
+        },
+        "id": "session-bootstrap",
+        "name": "Session Bootstrap",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1040,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "curlImport": "",
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "authentication": "none",
+          "provideSslCertificates": false,
+          "sendQuery": false,
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are a neutral, precise conversational understanding engine for a Telegram sales bot.\\n\\nYour ONLY job is to analyze the CURRENT customer natural message and return exactly one valid JSON object.\\n\\n### CRITICAL RULES\\n1. CURRENT NATURAL MESSAGE PRIORITY\\n- Always understand the current natural message first\\n- Do not rely on previous context unless there is strong explicit evidence in the CURRENT message\\n\\n2. STRICT CONTEXT USAGE\\n- Use previous context ONLY if there is strong explicit evidence in the CURRENT message\\n- If no strong evidence \u2192 ignore previous context completely\\n\\n3. REFERENCE SAFETY RULE (CRITICAL ADD)\\n\\nPrice or negotiation words alone do NOT prove that the user is referring to a previous product or option.\\n\\nExamples:\\n- \\\"wagaw tnsh yekanesal\\\"\\n- \\\"\u12cb\u130b\u12cd \u1275\u1295\u123d \u12ed\u1240\u1295\u1235\\\"\\n\\nThese must NOT automatically set reference_resolution.\\n\\nOnly set reference_resolution if the CURRENT message contains strong explicit reference (e.g., \\\"that one\\\", \\\"second one\\\", \\\"128gb version\\\").\\n\\nOtherwise ALWAYS return:\\n\\n\\\"reference_resolution\\\": { \\\"refers_to\\\": null, \\\"resolved_id\\\": null }\\n\\n4. If the meaning is unclear, return `clarification` with low `confidence` and high `ambiguity`.\\n5. Output ONLY valid JSON.\\n\\n6. UNDERSTANDING-FIRST RULE\\n- Your primary job is to understand the real meaning of the customer's current natural message.\\n- Classification is secondary and must be conservative.\\n- Do not aggressively force the message into a category if the meaning is weak, mixed, or unclear.\\n- If the meaning is uncertain, return clarification with low confidence and high ambiguity.\\n\\n7. CLASSIFICATION SAFETY\\n- Never classify negotiation or pricing-related messages as acknowledgment.\\n- Never default to fresh_request if the message clearly belongs to another function.\\n\\n### MESSAGE FUNCTION DEFINITIONS\\n- **info_request** \u2192 asking about store info, location, delivery, warranty, payment, contact\\n- **refinement** \u2192 adding detail (128gb, black, second one, cheaper)\\n- **negotiation** \u2192 asking for discount / price reduction\\n- **acknowledgment** \u2192 greeting, thanks, simple reply\\n- **clarification** \u2192 meaning or intention unclear\\n- **fresh_request** \u2192 completely new request unrelated to previous context\\n\\n### AMHARIC / MIXED LANGUAGE\\n- Fully support Amharic and mixed Amharic-English.\\n- Focus on semantic meaning, not literal words.\\n- Ignore spelling noise or informal phrasing.\\n\\n### OUTPUT FORMAT (STRICT)\\nReturn EXACTLY this JSON and nothing else:\\n\\n```json\\n{\\n  \\\"message_function\\\": \\\"info_request | refinement | negotiation | acknowledgment | clarification | fresh_request\\\",\\n  \\\"business_intent\\\": \\\"store_info | product_search | pricing | exchange | support | null\\\",\\n  \\\"topic\\\": \\\"store_info | product | exchange | pricing | location | null\\\",\\n  \\\"confidence\\\": 0.0,\\n  \\\"ambiguity\\\": 0.0,\\n  \\\"missing_information\\\": [],\\n  \\\"reference_resolution\\\": {\\n    \\\"refers_to\\\": null,\\n    \\\"resolved_id\\\": null\\n  },\\n  \\\"last_asked_key\\\": null\\n}\\n```\\n\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        event: {\n          event_type: $json.event?.event_type ?? null,\n          deep_link: $json.event?.deep_link ?? null,\n        },\n        session_context: {\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          collected_constraints: $json.session?.collected_constraints ?? {\n            budget_etb: null,\n            brand: null,\n            model: null,\n            storage: null,\n            condition: null,\n          },\n          last_asked_key: $json.session?.last_asked_key ?? null,\n          current_interest: $json.session?.flow_context?.buy_flow?.current_interest ?? null,\n          shown_products: Array.isArray($json.session?.flow_context?.buy_flow?.shown_products)\n            ? $json.session.flow_context.buy_flow.shown_products.slice(0, 5)\n            : [],\n          last_messages: Array.isArray($json.session?.conversation_history)\n            ? $json.session.conversation_history.slice(-6)\n            : [],\n        },\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+          "options": {},
+          "infoMessage": ""
+        },
+        "id": "understanding-ai",
+        "name": "Understanding AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1280,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const SESSION_BOOTSTRAP_NODE = 'Session Bootstrap';\nconst base = (() => {\n  try {\n    const ref = $item(0).$node[SESSION_BOOTSTRAP_NODE].json;\n    if (!ref || typeof ref !== 'object') {\n      console.error(JSON.stringify({ node: 'Understanding JSON Guard', error: 'cross_node_ref_empty', ref_node: SESSION_BOOTSTRAP_NODE }));\n      return {};\n    }\n    return ref;\n  } catch (e) {\n    console.error(JSON.stringify({ node: 'Understanding JSON Guard', error: 'cross_node_ref_failed', ref_node: SESSION_BOOTSTRAP_NODE, message: e.message }));\n    return {};\n  }\n})();\nconst payload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\n\nconst allowedMessageFunctions = ['info_request', 'refinement', 'negotiation', 'acknowledgment', 'clarification', 'fresh_request'];\nconst allowedBusinessIntents = ['store_info', 'product_search', 'pricing', 'exchange', 'support'];\nconst allowedTopics = ['store_info', 'product', 'exchange', 'pricing', 'location'];\nconst hardFallback = {\n  message_function: 'clarification',\n  business_intent: null,\n  topic: null,\n  confidence: 0.0,\n  ambiguity: 1.0,\n  missing_information: [],\n  reference_resolution: {\n    refers_to: null,\n    resolved_id: null,\n  },\n  last_asked_key: null,\n};\n\nconst issues = [];\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (isRecord(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return isRecord(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\nconst normalizeEnum = (value, allowed, label) => {\n  if (typeof value !== 'string') {\n    issues.push(label + '_type');\n    return null;\n  }\n  const normalized = value.trim().toLowerCase();\n  if (!allowed.includes(normalized)) {\n    issues.push(label + '_invalid');\n    return null;\n  }\n  return normalized;\n};\nconst normalizeNullableEnum = (value, allowed, label) => {\n  if (value === null || value === undefined) return null;\n  return normalizeEnum(value, allowed, label);\n};\nconst normalizeUnitNumber = (value, label) => {\n  if (typeof value !== 'number' || !Number.isFinite(value)) {\n    issues.push(label + '_type');\n    return null;\n  }\n  if (value < 0 || value > 1) {\n    issues.push(label + '_range');\n    return null;\n  }\n  return value;\n};\nconst normalizeStringArray = (value, label) => {\n  if (!Array.isArray(value)) {\n    issues.push(label + '_type');\n    return null;\n  }\n  const normalized = [];\n  for (const item of value) {\n    if (typeof item !== 'string') {\n      issues.push(label + '_item_type');\n      return null;\n    }\n    const text = item.trim();\n    if (text) normalized.push(text);\n  }\n  return normalized;\n};\nconst normalizeNullableString = (value, label) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value !== 'string') {\n    issues.push(label + '_type');\n    return null;\n  }\n  const normalized = value.trim();\n  return normalized || null;\n};\nconst validateReferenceResolution = (value) => {\n  if (!isRecord(value)) {\n    issues.push('reference_resolution_type');\n    return null;\n  }\n  return {\n    refers_to: normalizeNullableString(value.refers_to, 'reference_resolution.refers_to'),\n    resolved_id: normalizeNullableString(value.resolved_id, 'reference_resolution.resolved_id'),\n  };\n};\n\nconst rawResponse = parseJsonObject(payload.choices?.[0]?.message?.content)\n  || parseJsonObject(payload.output_text)\n  || parseJsonObject(payload.text)\n  || parseJsonObject(payload.data)\n  || parseJsonObject(payload.result)\n  || parseJsonObject(payload);\n\nlet understanding_output = hardFallback;\nif (!rawResponse) {\n  issues.push('understanding_response_not_parseable');\n} else {\n  const validated = {\n    message_function: normalizeEnum(rawResponse.message_function, allowedMessageFunctions, 'message_function'),\n    business_intent: normalizeNullableEnum(rawResponse.business_intent, allowedBusinessIntents, 'business_intent'),\n    topic: normalizeNullableEnum(rawResponse.topic, allowedTopics, 'topic'),\n    confidence: normalizeUnitNumber(rawResponse.confidence, 'confidence'),\n    ambiguity: normalizeUnitNumber(rawResponse.ambiguity, 'ambiguity'),\n    missing_information: normalizeStringArray(rawResponse.missing_information, 'missing_information'),\n    reference_resolution: validateReferenceResolution(rawResponse.reference_resolution),\n    last_asked_key: normalizeNullableString(rawResponse.last_asked_key, 'last_asked_key'),\n  };\n\n  const validationFailed = [\n    validated.message_function,\n    validated.confidence,\n    validated.ambiguity,\n    validated.missing_information,\n    validated.reference_resolution,\n  ].some((value) => value === null) || issues.length > 0;\n\n  if (!validationFailed) {\n    understanding_output = {\n      message_function: validated.message_function,\n      business_intent: validated.business_intent,\n      topic: validated.topic,\n      confidence: validated.confidence,\n      ambiguity: validated.ambiguity,\n      missing_information: validated.missing_information,\n      reference_resolution: validated.reference_resolution,\n      last_asked_key: validated.last_asked_key,\n    };\n  }\n}\n\nconst understanding_meta = {\n  validator_mode: 'pure_schema_validator',\n  schema_mode: 'minimal_guard_v2',\n  valid: issues.length === 0,\n  issues,\n  raw_response: rawResponse,\n  fallback_applied: issues.length > 0,\n  timestamp: Date.now(),\n};\nconsole.log(JSON.stringify({\n  node: 'Understanding JSON Guard - Pure Validator',\n  valid: understanding_meta.valid,\n  fallback_applied: understanding_meta.fallback_applied,\n  issues: understanding_meta.issues,\n  raw_response: rawResponse,\n}));\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    understanding_meta,\n  },\n}];",
+          "notice": ""
+        },
+        "id": "validation-node",
+        "name": "Understanding JSON Guard - Pure Validator",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1520,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const input = $json ?? {};\r\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\r\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\r\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\r\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\r\nconst understanding_meta = input.understanding_meta && typeof input.understanding_meta === 'object' ? input.understanding_meta : {};\r\n\r\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\r\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\r\nconst normalizeNullableNumber = (value) => {\r\n  if (value === null || value === undefined || value === '') return null;\r\n  const numeric = Number(value);\r\n  return Number.isFinite(numeric) ? numeric : null;\r\n};\r\nconst normalizePositiveNumber = (value) => {\r\n  const numeric = normalizeNullableNumber(value);\r\n  return numeric !== null && numeric > 0 ? numeric : null;\r\n};\r\nconst normalizeStringArray = (value) => Array.isArray(value)\r\n  ? value.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim())\r\n  : [];\r\nconst normalizeProduct = (value, index) => {\r\n  if (value === null || value === undefined) return null;\r\n  if (typeof value === 'string' || typeof value === 'number') {\r\n    return { id: String(value), brand: null, model: null, storage: null, condition: null, price_etb: null, name: String(value), raw: value, index };\r\n  }\r\n  if (!isRecord(value)) return null;\r\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\r\n  return {\r\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\r\n    brand: normalizeText(value.brand),\r\n    model: normalizeText(value.model ?? value.name ?? value.title),\r\n    storage: normalizeText(value.storage),\r\n    condition: normalizeText(value.condition),\r\n    price_etb: normalizeNullableNumber(priceValue),\r\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || normalizeText(value.name ?? value.title),\r\n    raw: value,\r\n    index,\r\n  };\r\n};\r\n\r\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\r\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\r\n  : [];\r\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);\r\nconst currentFlow = session.conversation_state?.current_flow ?? null;\r\nconst currentTopic = session.conversation_state?.current_topic ?? null;\r\nconst existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\r\nconst mergedConstraints = {\r\n  budget_etb: normalizePositiveNumber(existingConstraintsSource.budget_etb),\r\n  brand: normalizeText(existingConstraintsSource.brand ?? currentInterest?.brand ?? null),\r\n  model: normalizeText(existingConstraintsSource.model ?? currentInterest?.model ?? null),\r\n  storage: normalizeText(existingConstraintsSource.storage ?? currentInterest?.storage ?? null),\r\n  condition: normalizeText(existingConstraintsSource.condition ?? currentInterest?.condition ?? null),\r\n};\r\n\r\nconst referenceSource = isRecord(understanding_output.reference_resolution) ? understanding_output.reference_resolution : {};\r\nconst reference_resolution = {\r\n  reference_type: normalizeText(referenceSource.refers_to) ?? 'none',\r\n  resolved: Boolean(normalizeText(referenceSource.resolved_id)),\r\n  resolved_product_id: normalizeText(referenceSource.resolved_id),\r\n  resolved_product_name: null,\r\n};\r\nconst resolveProductById = (id) => shownProducts.find((item) => item.id === id) ?? (currentInterest?.id === id ? currentInterest : null) ?? null;\r\nconst resolvedProduct = reference_resolution.resolved && reference_resolution.resolved_product_id\r\n  ? resolveProductById(reference_resolution.resolved_product_id)\r\n  : null;\r\n\r\nconst businessIntent = normalizeText(understanding_output.business_intent);\r\nconst messageFunction = normalizeText(understanding_output.message_function) ?? 'clarification';\r\nconst understandingTopic = normalizeText(understanding_output.topic);\r\nconst confidence = typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0;\r\nconst missingInformation = normalizeStringArray(understanding_output.missing_information);\r\nconst requestedLastAskedKey = normalizeText(understanding_output.last_asked_key);\r\nconst hasActiveContext = Boolean(\r\n  currentFlow\r\n  || currentTopic\r\n  || shownProducts.length > 0\r\n  || currentInterest\r\n  || Object.values(mergedConstraints).some((value) => value !== null)\r\n  || (Array.isArray(session.conversation_history) && session.conversation_history.length > 0)\r\n);\r\nconst intentFlow = {\r\n  product_search: 'buy',\r\n  pricing: 'buy',\r\n  exchange: 'exchange',\r\n  store_info: 'info',\r\n  support: 'support',\r\n}[businessIntent ?? ''] ?? null;\r\nconst sameFlowIntent = Boolean(\r\n  (currentFlow === 'buy' && ['product_search', 'pricing'].includes(businessIntent ?? ''))\r\n  || (currentFlow === 'exchange' && businessIntent === 'exchange')\r\n  || (currentFlow === 'info' && businessIntent === 'store_info')\r\n  || (currentFlow === 'support' && businessIntent === 'support')\r\n);\r\nconst extractModelFromText = (text) => {\r\n  if (typeof text !== 'string') return null;\r\n  const m = text.match(/\\b(?:iphone\\s*\\d+(?:\\s*(?:pro\\s*max|pro|max|plus|mini))?|samsung\\s*[a-z0-9]+(?:\\s+[a-z0-9]+)?|pixel\\s*[a-z0-9]+|redmi\\s*[a-z0-9]+)\\b/i);\r\n  return m ? m[0].trim().toLowerCase() : null;\r\n};\r\nconst rawTextModel = extractModelFromText(event.text ?? '');\r\nconst sessionModelLower = (currentInterest?.model ?? mergedConstraints.model ?? '').toLowerCase() || null;\r\nconst isModelSwitch = Boolean(\r\n  rawTextModel\r\n  && sessionModelLower\r\n  && !rawTextModel.includes(sessionModelLower)\r\n  && !sessionModelLower.includes(rawTextModel)\r\n);\r\nconst shouldContinueContext = Boolean(\r\n  hasActiveContext && !isModelSwitch && (\r\n    ['refinement', 'negotiation'].includes(messageFunction)\r\n    || reference_resolution.reference_type !== 'none'\r\n    || sameFlowIntent\r\n  )\r\n);\r\nconst effectiveFlow = intentFlow ?? currentFlow ?? null;\r\nconst effectiveTopic = understandingTopic ?? (shouldContinueContext ? currentTopic ?? null : null);\r\nconst hasKnownBudget = mergedConstraints.budget_etb !== null;\r\nconst hasKnownBrand = Boolean(mergedConstraints.brand);\r\nconst hasKnownModel = Boolean(mergedConstraints.model);\r\nconst hasProductContext = Boolean(\r\n  resolvedProduct\r\n  || currentInterest\r\n  || shownProducts.length > 0\r\n  || hasKnownBudget\r\n  || hasKnownBrand\r\n  || hasKnownModel\r\n);\r\n\r\nconst computedMissingFields = [];\r\nif (effectiveFlow === 'buy' && missingInformation.length === 0) {\r\n  const needFreshProductAnchor = !hasProductContext && !shouldContinueContext;\r\n  if (needFreshProductAnchor) {\r\n    if (hasKnownBrand && !hasKnownModel) computedMissingFields.push('model');\r\n    else if (!hasKnownBrand && !hasKnownModel) computedMissingFields.push('brand_or_model');\r\n  }\r\n}\r\nif (effectiveFlow === 'exchange' && missingInformation.length === 0) {\r\n  const needProductAnchor = !currentInterest && shownProducts.length === 0;\r\n  if (needProductAnchor) {\r\n    if (hasKnownBrand && !hasKnownModel) computedMissingFields.push('model');\r\n    else if (!hasKnownBrand && !hasKnownModel) computedMissingFields.push('brand_or_model');\r\n  }\r\n  if (!mergedConstraints.condition) computedMissingFields.push('condition');\r\n}\r\nconst missing_fields = missingInformation.length > 0 ? missingInformation.slice() : computedMissingFields;\r\nif (effectiveFlow === 'exchange' && !mergedConstraints.condition && !missing_fields.includes('condition')) {\r\n  missing_fields.push('condition');\r\n}\r\nif (effectiveFlow === 'exchange' && missing_fields.length > 2) {\r\n  missing_fields.length = 2;\r\n}\r\nconst last_asked_key = requestedLastAskedKey ?? missing_fields[0] ?? null;\r\n\r\nconst productContext = {\r\n  brand: mergedConstraints.brand,\r\n  model: mergedConstraints.model,\r\n  storage: mergedConstraints.storage,\r\n  condition: mergedConstraints.condition,\r\n  budget_etb: mergedConstraints.budget_etb,\r\n  current_interest: currentInterest ? currentInterest.raw : null,\r\n  current_topic: currentTopic,\r\n  current_flow: currentFlow,\r\n};\r\n\r\nlet rules_output = {\r\n  reply_mode: shouldContinueContext ? 'resume_previous_flow' : 'off_topic_redirect',\r\n  should_call_resolver: false,\r\n  resolver_input: {\r\n    flow: effectiveFlow,\r\n    product_context: productContext,\r\n    missing_fields,\r\n    resolved_reference: resolvedProduct ? { id: resolvedProduct.id, raw: resolvedProduct.raw } : null,\r\n    resolved_product_name: resolvedProduct?.name ?? null,\r\n  },\r\n  session_update: {\r\n    last_topic: effectiveTopic,\r\n    flow_stage: shouldContinueContext ? (currentFlow ?? effectiveFlow) : effectiveFlow,\r\n    ambiguous_reference: reference_resolution.reference_type !== 'none' ? reference_resolution.reference_type : null,\r\n    resolved_ambiguity: reference_resolution.resolved,\r\n    collected_constraints: mergedConstraints,\r\n    last_asked_key,\r\n  },\r\n  confidence,\r\n  reasoning: shouldContinueContext ? 'default_resume_previous_flow' : 'default_off_topic_redirect',\r\n};\r\n\r\nif (event.event_type === 'start_reset') {\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: 'small_talk_redirect',\r\n    should_call_resolver: false,\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      last_topic: null,\r\n      flow_stage: null,\r\n      ambiguous_reference: null,\r\n      resolved_ambiguity: false,\r\n      last_asked_key: null,\r\n    },\r\n    reasoning: 'start_reset_welcome',\r\n  };\r\n} else if (event.event_type === 'deep_link_start') {\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: 'business_resolve',\r\n    should_call_resolver: true,\r\n    resolver_input: {\r\n      ...rules_output.resolver_input,\r\n      flow: 'buy',\r\n      missing_fields: [],\r\n    },\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      last_topic: 'product',\r\n      flow_stage: 'buy',\r\n      last_asked_key: null,\r\n    },\r\n    reasoning: 'deep_link_start_business_entry',\r\n  };\r\n} else if (!Number.isFinite(confidence) || confidence < 0.6) {\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: shouldContinueContext && currentFlow ? 'resume_previous_flow' : 'handoff_admin',\r\n    should_call_resolver: Boolean(shouldContinueContext && currentFlow),\r\n    reasoning: shouldContinueContext && currentFlow ? 'low_confidence_but_context_preserved' : 'low_understanding_confidence',\r\n  };\r\n} else if (messageFunction === 'acknowledgment') {\r\n  const shouldOpenLightConversation = Boolean(\r\n    Number(session.message_count ?? 0) === 0\r\n    && !currentFlow\r\n    && !currentTopic\r\n    && shownProducts.length === 0\r\n    && !currentInterest\r\n    && !Object.values(mergedConstraints).some((value) => value !== null)\r\n  );\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: shouldOpenLightConversation ? 'small_talk_redirect' : 'acknowledge_and_close',\r\n    should_call_resolver: false,\r\n    reasoning: shouldOpenLightConversation ? 'acknowledgment_first_turn_redirect' : 'acknowledgment_detected',\r\n  };\r\n} else if (messageFunction === 'clarification') {\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: hasActiveContext ? 'clarify_reference' : 'handoff_admin',\r\n    should_call_resolver: false,\r\n    reasoning: hasActiveContext ? 'clarification_with_existing_context' : 'clarification_without_context',\r\n  };\r\n} else if (businessIntent === 'store_info' || understandingTopic === 'store_info' || understandingTopic === 'location' || (messageFunction === 'info_request' && (businessIntent === null || businessIntent === 'store_info'))) {\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: 'business_resolve',\r\n    should_call_resolver: true,\r\n    resolver_input: {\r\n      ...rules_output.resolver_input,\r\n      flow: 'info',\r\n      missing_fields: [],\r\n    },\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      last_topic: understandingTopic ?? 'store_info',\r\n      flow_stage: shouldContinueContext ? (currentFlow ?? null) : 'info',\r\n      last_asked_key: null,\r\n    },\r\n    reasoning: 'store_info_bypasses_product_flow',\r\n  };\r\n} else if (businessIntent === 'support') {\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: shouldContinueContext && currentFlow ? 'resume_previous_flow' : 'business_resolve',\r\n    should_call_resolver: true,\r\n    resolver_input: {\r\n      ...rules_output.resolver_input,\r\n      flow: 'support',\r\n      missing_fields: [],\r\n    },\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      last_topic: understandingTopic ?? 'support',\r\n      flow_stage: shouldContinueContext ? (currentFlow ?? 'support') : 'support',\r\n      last_asked_key: null,\r\n    },\r\n    reasoning: 'support_request_routed',\r\n  };\r\n} else if (messageFunction === 'negotiation') {\r\n  const negotiationFlow = currentFlow === 'exchange' ? 'exchange' : (intentFlow ?? currentFlow ?? 'buy');\r\n  const hasAnchoredContext = Boolean(\r\n    session.flow_context?.buy_flow?.current_interest\r\n  );\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: hasAnchoredContext ? 'resume_previous_flow' : 'business_resolve',\r\n    should_call_resolver: hasAnchoredContext ? false : true,\r\n    resolver_input: {\r\n      ...rules_output.resolver_input,\r\n      flow: negotiationFlow,\r\n      missing_fields: [],\r\n    },\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      flow_stage: negotiationFlow,\r\n      last_asked_key: null,\r\n    },\r\n    reasoning: hasAnchoredContext\r\n      ? 'negotiation_anchored_to_existing_interest'\r\n      : (hasProductContext || hasActiveContext ? 'negotiation_business_resolve_with_context' : 'negotiation_business_resolve_without_context'),\r\n  };\r\n} else if (messageFunction === 'refinement') {\r\n  if (!shouldContinueContext) {\r\n    rules_output.resolver_input.product_context = { budget_etb: mergedConstraints.budget_etb, brand: null, model: null, storage: null, condition: null, current_interest: null, current_topic: null, current_flow: null };\r\n    rules_output.session_update.collected_constraints = { budget_etb: mergedConstraints.budget_etb, brand: null, model: null, storage: null, condition: null };\r\n    rules_output.resolver_input.resolved_reference = null;\r\n  }\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: shouldContinueContext ? 'resume_previous_flow' : 'business_resolve',\r\n    should_call_resolver: true,\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      flow_stage: shouldContinueContext ? (currentFlow ?? effectiveFlow) : effectiveFlow,\r\n      last_asked_key,\r\n    },\r\n    reasoning: shouldContinueContext ? 'refinement_reuses_session_context' : 'refinement_with_model_switch',\r\n  };\r\n} else if (messageFunction === 'fresh_request') {\r\n  const isBusiness = businessIntent !== null;\r\n  if (isBusiness) {\r\n    rules_output.resolver_input.product_context = { budget_etb: null, brand: null, model: null, storage: null, condition: null, current_interest: null, current_topic: null, current_flow: null };\r\n    rules_output.session_update.collected_constraints = { budget_etb: null, brand: null, model: null, storage: null, condition: null };\r\n    rules_output.resolver_input.resolved_reference = null;\r\n  }\r\n  rules_output = {\r\n    ...rules_output,\r\n    reply_mode: isBusiness ? 'business_resolve' : 'off_topic_redirect',\r\n    should_call_resolver: isBusiness,\r\n    resolver_input: {\r\n      ...rules_output.resolver_input,\r\n      flow: intentFlow ?? effectiveFlow,\r\n    },\r\n    session_update: {\r\n      ...rules_output.session_update,\r\n      flow_stage: intentFlow ?? effectiveFlow,\r\n      last_asked_key,\r\n    },\r\n    reasoning: isBusiness ? 'fresh_business_request' : 'fresh_non_business_message',\r\n  };\r\n}\r\n\r\nreturn [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];",
+          "notice": ""
+        },
+        "id": "rules-layer",
+        "name": "Rules Layer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2020,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "curlImport": "",
+          "method": "POST",
+          "url": "={{ \"https://fastidious-schnauzer-265.convex.site/api/products/search\" }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "provideSslCertificates": false,
+          "sendQuery": false,
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  seller_id: (() => {\n    const cfg = $json.client_config;\n    if (cfg && typeof cfg.store_name === 'string' && cfg.store_name.trim()) {\n      return cfg.store_name.trim().toLowerCase();\n    }\n    return $env.SELLER_ID || 'missing_seller_id';\n  })(),\n  phoneType: (() => {\n    const cleanPhoneType = (value) => {\n      if (typeof value !== 'string') return null;\n      const normalized = value\n        .replace(/\\b(32|64|128|256|512|1024)\\s*gb\\b/ig, ' ')\n        .replace(/\\b(iphone|samsung|pixel|redmi|xiaomi|tecno|infinix|oppo|vivo|realme|itel|nokia)(\\d)/ig, '$1 $2')\n        .replace(/\\b(pro)(max)\\b/ig, '$1 $2')\n        .replace(/\\s+/g, ' ')\n        .trim();\n      return normalized || null;\n    };\n    const text = String($json.event?.text || '').trim();\n    const extractFromText = (value) => {\n      const source = String(value || '').trim();\n      if (!source) return null;\n      const match = source.match(/\\b(?:iphone\\s*\\d+(?:\\s*(?:pro\\s*max|pro|max|plus|mini))?|samsung\\s*[a-z0-9+ ]+|pixel\\s*[a-z0-9+ ]+|redmi\\s*[a-z0-9+ ]+|xiaomi\\s*[a-z0-9+ ]+|tecno\\s*[a-z0-9+ ]+|infinix\\s*[a-z0-9+ ]+|oppo\\s*[a-z0-9+ ]+|vivo\\s*[a-z0-9+ ]+|realme\\s*[a-z0-9+ ]+|itel\\s*[a-z0-9+ ]+|nokia\\s*[a-z0-9+ ]+)\\b/i);\n      return cleanPhoneType(match ? match[0] : null);\n    };\n    const explicit = cleanPhoneType($json.rules_output?.resolver_input?.resolved_product_name || null);\n    if (explicit) return explicit;\n    const fromText = extractFromText(text);\n    if (fromText) return fromText;\n    const ref = $json.understanding_output?.reference_resolution?.refers_to;\n    if (typeof ref === 'string') {\n      const normalized = cleanPhoneType(ref);\n      const blocked = ['desired_phone', 'current_phone', 'last_shown_option', 'cheaper_option', 'previous_selection', 'none'];\n      if (normalized && !blocked.includes(normalized.toLowerCase())) return normalized;\n    }\n    const fromContext = cleanPhoneType(([\n      $json.rules_output?.resolver_input?.product_context?.brand,\n      $json.rules_output?.resolver_input?.product_context?.model,\n    ].filter(Boolean).join(' ').trim() || [\n      $json.session?.collected_constraints?.brand,\n      $json.session?.collected_constraints?.model,\n    ].filter(Boolean).join(' ').trim()));\n    if (fromContext) return fromContext;\n    return null;\n  })(),\n  storage: (() => {\n    const s = $json.rules_output?.resolver_input?.product_context?.storage\n      ?? $json.session?.collected_constraints?.storage\n      ?? null;\n    if (typeof s !== 'string' || !s.trim()) return null;\n    const m = s.match(/\\b(32|64|128|256|512|1024)\\s*gb\\b/i);\n    return m ? (m[1] + 'GB') : null;\n  })(),\n}) }}",
+          "options": {},
+          "infoMessage": ""
+        },
+        "id": "product-search-convex-test",
+        "name": "Product Search (Convex Test)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2500,
+          300
+        ],
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "xzpMAoQ6AlcpjRvL",
+            "name": "Convex Bot Header Auth"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const RULES_NODE = 'Rules Layer';\nlet base = {};\ntry {\n  let ref = $json;\n  if (!ref || !ref.rules_output) {\n     try {\n       ref = $('Rules Layer').first().json;\n     } catch (e2) {}\n  }\n  if (!ref || !ref.rules_output) {\n     try {\n       ref = $item(0).$node['Rules Layer'].json;\n     } catch (e3) {}\n  }\n  base = ref ?? {};\n} catch (e) {\n  console.error(JSON.stringify({ node: 'Business Data Resolver', error: 'cross_node_ref_failed', ref_node: RULES_NODE, message: e.message }));\n}\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst understanding_output = base.understanding_output && typeof base.understanding_output === 'object' ? base.understanding_output : {};\nconst rules_output = base.rules_output && typeof base.rules_output === 'object' ? base.rules_output : {};\nconst resolverInput = rules_output.resolver_input && typeof rules_output.resolver_input === 'object' ? rules_output.resolver_input : {};\nconst inputItems = $input.all().map((item) => item.json ?? {});\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeStorageValue = (value) => {\n  if (typeof value !== 'string') return null;\n  const trimmed = value.trim();\n  if (!trimmed) return null;\n  const gbMatch = trimmed.match(/\\b(32|64|128|256|512|1024)\\b/i);\n  return gbMatch ? (gbMatch[1] + 'GB') : trimmed;\n};\nconst extractStorage = (value) => {\n  if (typeof value !== 'string') return null;\n  const match = value.match(/\\b(32|64|128|256|512|1024)\\s*gb\\b/i);\n  return match ? (match[1] + 'GB') : null;\n};\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined || !isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  const stockQty = normalizeNullableNumber(value.stockQuantity ?? value.stock_quantity ?? value.stock ?? null);\n  const strippedRaw = (() => {\n    if (!isRecord(value)) return value;\n    // eslint-disable-next-line no-unused-vars\n    const { raw: _raw, ...rest } = value;\n    return rest;\n  })();\n  return {\n    id: String(value.id ?? value._id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.phoneType ?? value.name ?? value.title),\n    price_etb: normalizeNullableNumber(priceValue),\n    storage: normalizeStorageValue(String(value.storage ?? '')),\n    ram: value.ram === null || value.ram === undefined ? null : String(value.ram),\n    condition: normalizeText(value.condition),\n    stock_status: stockQty === null ? null : (stockQty > 0 ? 'in_stock' : 'out_of_stock'),\n    stock_quantity: stockQty,\n    raw: strippedRaw,\n  };\n};\nconst looksLikeProductRecord = (value) => isRecord(value) && ['id', '_id', 'product_id', 'sku', 'brand', 'model', 'phoneType', 'name', 'title', 'price', 'price_etb', 'amount'].some((key) => Object.prototype.hasOwnProperty.call(value, key));\nconst collectRemoteProducts = (items) => {\n  const flattened = [];\n  for (const item of items) {\n    if (Array.isArray(item)) {\n      flattened.push(...item.filter(looksLikeProductRecord));\n      continue;\n    }\n    if (isRecord(item) && Array.isArray(item.products)) {\n      flattened.push(...item.products.filter(looksLikeProductRecord));\n      continue;\n    }\n    if (looksLikeProductRecord(item)) {\n      flattened.push(item);\n    }\n  }\n  const deduped = [];\n  const seen = new Set();\n  for (const value of flattened) {\n    const normalized = normalizeProduct(value, deduped.length + 1);\n    if (!normalized) continue;\n    if (seen.has(normalized.id)) continue;\n    seen.add(normalized.id);\n    deduped.push(normalized);\n  }\n  return deduped;\n};\n\nconst remoteProducts = collectRemoteProducts(inputItems);\nlet result_mode = remoteProducts.length > 0 ? 'products_found' : 'no_products';\nconst products = remoteProducts;\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 10);\nconst sessionConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst sessionConstraints = {\n  budget_etb: normalizeNullableNumber(sessionConstraintsSource.budget_etb),\n  brand: normalizeText(sessionConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(sessionConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeStorageValue(sessionConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(sessionConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\nconst productContextSource = isRecord(resolverInput.product_context) ? resolverInput.product_context : {};\nlet effectiveConstraints = {\n  budget_etb: Object.prototype.hasOwnProperty.call(productContextSource, 'budget_etb') ? normalizeNullableNumber(productContextSource.budget_etb) : sessionConstraints.budget_etb,\n  brand: Object.prototype.hasOwnProperty.call(productContextSource, 'brand') ? normalizeText(productContextSource.brand) : sessionConstraints.brand,\n  model: Object.prototype.hasOwnProperty.call(productContextSource, 'model') ? normalizeText(productContextSource.model) : sessionConstraints.model,\n  storage: Object.prototype.hasOwnProperty.call(productContextSource, 'storage') ? normalizeStorageValue(productContextSource.storage) : (sessionConstraints.storage ?? extractStorage(String(event.text ?? ''))),\n  condition: Object.prototype.hasOwnProperty.call(productContextSource, 'condition') ? normalizeText(productContextSource.condition) : sessionConstraints.condition,\n};\n\nconst candidateProducts = products.length > 0 ? products : shownProducts;\nconst productNameForMatch = (product) => [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\nlet constraintMatchFailed = false;\nconst isNonProductFlow = resolverInput.flow === 'info' || resolverInput.flow === 'support';\nif (products.length > 0) {\n  if (effectiveConstraints.model) {\n    const hasModelMatch = candidateProducts.some((product) => productNameForMatch(product).includes(effectiveConstraints.model.toLowerCase()));\n    if (!hasModelMatch) constraintMatchFailed = true;\n  }\n  if (effectiveConstraints.brand && !constraintMatchFailed) {\n    const hasBrandMatch = candidateProducts.some((product) => product.brand && product.brand.toLowerCase().includes(effectiveConstraints.brand.toLowerCase()));\n    if (!hasBrandMatch) constraintMatchFailed = true;\n  }\n  if (effectiveConstraints.storage) {\n    const hasStorageMatch = candidateProducts.some((product) => product.storage && normalizeStorageValue(product.storage) === normalizeStorageValue(effectiveConstraints.storage));\n    if (!hasStorageMatch) effectiveConstraints = { ...effectiveConstraints, storage: null };\n  }\n  if (effectiveConstraints.condition) {\n    const hasConditionMatch = candidateProducts.some((product) => product.condition && product.condition.toLowerCase() === effectiveConstraints.condition.toLowerCase());\n    if (!hasConditionMatch) effectiveConstraints = { ...effectiveConstraints, condition: null };\n  }\n}\nconst requestedName = normalizeText(resolverInput.resolved_product_name)\n  ?? ([effectiveConstraints.brand, effectiveConstraints.model].filter(Boolean).join(' ').trim() || null);\nlet selectedProduct = null;\nif (resolverInput.resolved_reference?.id) {\n  selectedProduct = candidateProducts.find((product) => product.id === resolverInput.resolved_reference.id) ?? null;\n}\nif (!selectedProduct && requestedName) {\n  const lowered = requestedName.toLowerCase();\n  selectedProduct = candidateProducts.find((product) => {\n    const name = productNameForMatch(product);\n    return Boolean(name) && name === lowered;\n  }) ?? null;\n}\nconst isContinuationFlow = ['refinement', 'negotiation'].includes(understanding_output?.message_function ?? '');\nif (!selectedProduct && currentInterest && products.length === 0 && isContinuationFlow) {\n  const sameModel = effectiveConstraints.model && currentInterest.model && currentInterest.model.toLowerCase() === effectiveConstraints.model.toLowerCase();\n  const sameBrand = effectiveConstraints.brand && currentInterest.brand && currentInterest.brand.toLowerCase() === effectiveConstraints.brand.toLowerCase();\n  if (!effectiveConstraints.model || sameModel || sameBrand) {\n    selectedProduct = currentInterest;\n  }\n}\n\nconst matchesConstraints = (product) => {\n  if (!product) return false;\n  if (effectiveConstraints.brand && (!product.brand || !product.brand.toLowerCase().includes(effectiveConstraints.brand.toLowerCase()))) return false;\n  if (effectiveConstraints.model) {\n    const name = productNameForMatch(product);\n    if (!name.includes(effectiveConstraints.model.toLowerCase())) return false;\n  }\n  if (effectiveConstraints.storage && (!product.storage || normalizeStorageValue(product.storage) !== normalizeStorageValue(effectiveConstraints.storage))) return false;\n  if (effectiveConstraints.condition && (!product.condition || product.condition.toLowerCase() !== effectiveConstraints.condition.toLowerCase())) return false;\n  return true;\n};\n\nconst filteredProducts = candidateProducts.filter(matchesConstraints);\nconst effectiveProducts = filteredProducts.length > 0 ? filteredProducts : (products.length > 0 ? candidateProducts : []);\nconst replyProducts = selectedProduct\n  ? [selectedProduct]\n  : effectiveProducts.slice(0, 5);\nconst numericPrices = replyProducts.map((product) => product.price_etb).filter((value) => Number.isFinite(value));\nconst priceRange = numericPrices.length > 0 ? { min: Math.min(...numericPrices), max: Math.max(...numericPrices) } : null;\nlet result_type = 'no_match';\nlet next_step = 'ask_clarification';\nlet exchange_context = null;\nconst isExchangeClarification = resolverInput.flow === 'exchange'\n  && Array.isArray(resolverInput.missing_fields)\n  && resolverInput.missing_fields.length > 0;\nconst exchangeContext = resolverInput.flow === 'exchange'\n  ? {\n      current_interest: session.flow_context?.buy_flow?.current_interest ?? null,\n      collected_constraints: effectiveConstraints,\n    }\n  : null;\n\nif (rules_output.reply_mode === 'clarify_reference') {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n} else if (isExchangeClarification) {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n  exchange_context = exchangeContext;\n} else if (resolverInput.flow === 'exchange') {\n  result_type = 'exchange_offer';\n  next_step = 'ask_clarification';\n  exchange_context = exchangeContext;\n} else if (resolverInput.flow === 'info' || resolverInput.flow === 'support') {\n  result_type = 'store_info';\n  result_mode = 'info';\n  next_step = 'direct_answer';\n} else if (selectedProduct) {\n  result_type = 'single_product';\n  next_step = 'show_single';\n} else if (effectiveProducts.length > 1) {\n  result_type = 'multiple_options';\n  next_step = 'show_options';\n} else if (effectiveProducts.length === 1) {\n  result_type = 'single_product';\n  next_step = 'show_single';\n} else if ((resolverInput.missing_fields ?? []).length > 0) {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n}\nif (!isNonProductFlow && constraintMatchFailed && result_type !== 'clarification_needed' && result_type !== 'exchange_offer') {\n  result_type = 'no_match';\n  next_step = 'ask_clarification';\n}\n\nconst isNewProductFocus = !currentInterest || (replyProducts[0] && replyProducts[0].id !== currentInterest.id);\nconst post_price_mode =\n  result_type === 'single_product'\n  && replyProducts.length === 1\n  && resolverInput.flow === 'buy'\n  && isNewProductFocus\n    ? 'price_shown'\n    : null;\nconst exchange_invitation_variant =\n  post_price_mode === 'price_shown'\n    ? ((Number.isFinite(Number(session.message_count ?? null)) ? Number(session.message_count) : 0) % 4) + 1\n    : null;\nconst product_detail_fields = (() => {\n  if (post_price_mode !== 'price_shown' || !replyProducts[0]) return [];\n  const product = replyProducts[0];\n  const isApple = (product.brand ?? '').toLowerCase() === 'apple' || (product.model ?? '').toLowerCase().includes('iphone');\n  return ['storage', 'ram', 'condition']\n    .filter((key) => {\n      if (key === 'ram' && isApple) return false;\n      return product[key] != null;\n    })\n    .map((key) => ({ key, value: String(product[key]) }));\n})();\nconst exchange_collection = resolverInput.flow === 'exchange'\n  ? (() => {\n      const target_phone_raw = session.flow_context?.buy_flow?.current_interest;\n      const target_phone = isRecord(target_phone_raw)\n        ? {\n            brand: normalizeText(target_phone_raw.brand ?? null),\n            model: normalizeText(target_phone_raw.model ?? target_phone_raw.phoneType ?? null),\n            storage: normalizeStorageValue(target_phone_raw.storage ?? null),\n          }\n        : null;\n      const exchangeDetails = isRecord(session.exchange_details) ? session.exchange_details : {};\n      const collectedConstraints = isRecord(session.collected_constraints) ? session.collected_constraints : {};\n      return {\n        target_phone,\n        collected: {\n          model: normalizeText(exchangeDetails.model ?? collectedConstraints.model ?? null),\n          storage: normalizeStorageValue(exchangeDetails.storage ?? collectedConstraints.storage ?? null),\n          ram: exchangeDetails.ram === null || exchangeDetails.ram === undefined ? null : String(exchangeDetails.ram),\n          condition: normalizeText(exchangeDetails.condition ?? collectedConstraints.condition ?? null),\n          battery_health: exchangeDetails.battery_health === null || exchangeDetails.battery_health === undefined ? null : String(exchangeDetails.battery_health),\n        },\n      };\n    })()\n  : null;\n\nconst resolver_output = {\n  result_mode,\n  result_type,\n  products: replyProducts,\n  exchange_context,\n  next_step,\n  post_price_mode,\n  exchange_invitation_variant,\n  product_detail_fields,\n  exchange_collection,\n  facts_for_reply: {\n    product_found: Boolean(selectedProduct || replyProducts.length > 0),\n    how_many_options: replyProducts.length,\n    stock_status: selectedProduct?.stock_status ?? (replyProducts[0]?.stock_status ?? null),\n    price_range: priceRange,\n  },\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    rules_output,\n    result_mode,\n    products,\n    resolver_output,\n  },\n}];",
+          "notice": ""
+        },
+        "id": "business-data-resolver",
+        "name": "Business Data Resolver",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2740,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "curlImport": "",
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "authentication": "none",
+          "provideSslCertificates": false,
+          "sendQuery": false,
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0.05,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 2 Reply AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object with exactly this shape: {\\\"reply_text\\\":\\\"string\\\"}.\\\\nDo not add any other keys. Do not explain anything. Do not add markdown fences.\\\\nUse only the provided customer_text, understanding_output, rules_output, resolver_output, reply_context, last_messages, and client_config.\\\\nNever invent stock, price, warranty, availability, delivery, location, or shop facts.\\\\nKeep the reply to max 3 short lines.\\\\nDefault to natural Amharic in Ethiopic script for conversation.\\\\nUse English only for brand, model, storage, and product names where natural.\\\\nDo not produce awkward English-Amharic transliteration.\\\\nDo not use vague words like technology, electronics, gadgets, or accessories unless the customer explicitly asks for them.\\\\nPrefer wording around phone, mobile, model, exchange, shop, price, and availability.\\\\nOne emoji max, and only when the tone is playful.\\\\nStrict continuity rules:\\\\n- If reply_context.should_greet is false, never greet, never welcome, and never reopen with a seller introduction.\\\\n- Only use welcome or greeting opener text on explicit restart or start_reset. Do not use welcome phrasing for normal business turns.\\\\n- If reply_context.has_active_context is true, continue that context instead of asking a generic buying-or-exchange question.\\\\n- If the user message is clear, respond to that exact message and do not replace it with a generic opening.\\\\n- If current_flow or current_topic exists, use it to continue the thread.\\\\nStrict reply mode rules:\\\\n- acknowledge_and_close: short close only, no question, no greeting.\\\\n- off_topic_redirect: short natural redirect only, at most one gentle next-step question, no greeting, and no product-discovery opener. Do not ask what phone or model the customer wants unless the current message itself contains product intent.\\\\n- small_talk_redirect: short natural acknowledgment plus one neutral TedyTech-help next step, no repeated welcome, and no product-discovery opener.\\\\n- clarify_reference: ask which one the customer means, no product facts, no generic reopening.\\\\n- resume_previous_flow: continue the previous thread directly, no restart behavior.\\\\n- business_resolve: use resolver facts only. If resolver facts are weak, ask one narrow follow-up tied to the actual customer text or current context, or honestly say the exact detail is not available in the current data. Do not pivot into product discovery unless the customer message itself also contains product intent. If understanding_output.message_function is negotiation or understanding_output.business_intent is pricing, stay price-focused and do not reply with a generic acknowledgment. Address the price concern directly, then ask one narrow price/model follow-up if needed.\\ If resolver_output.result_type is single_product and resolver_output.facts_for_reply.stock_status is in_stock, do not say unavailable or out of stock. Respond as available and use the grounded price if resolver_output.facts_for_reply.price_range is present. If resolver_output.result_type is no_match, only then say the exact model is not currently available.\\n- handoff_admin: brief reassurance only, no question, no greeting.\\\\nStore-info rules:\\\\n- If rules_output.resolver_input.flow is info or understanding_output.topic is store_info, answer only the store-info request.\\\\n- GROUNDED store info is in client_config: store_address contains the physical address, store_location_link is the maps link, support_contact is the phone/contact number, warranty_policy is the warranty info.\\\\n- If client_config.store_address is present, use it directly to answer location questions. Do NOT say the information is unavailable.\\\\n- If a specific detail is missing from client_config (e.g., store_location_link is null), only then say that specific detail is not available.\\\\n- After a store-info answer, do not append a product-search question unless the same message also asked about products.\\\\nNarrow clarification rules:\\\\n- Do not ask buying-or-exchange unless intent is truly unclear and there is no useful session context.\\\\n- If the customer asked about price, ask a narrow follow-up about the model or brand if needed.\\\\n- If the customer asked available?, use the current item or current flow if present; do not reopen from zero.\\\\n- If the customer said that one or cheaper one, stay in reference clarification or prior-context continuation; do not reopen with a catalog greeting.\\\\n- If resolver_output.post_price_mode is price_shown and resolver_output.result_type is single_product: this is a HARD OVERRIDE. Do not add any generic close, any broader question, or any extra sentence. After the price, add ONE blank line, then ONE single short sentence only. That sentence must lead with an exchange value hook and end with 'or more details?' as the only fallback. Do NOT say 'about this phone' or 'about the target phone'. Do NOT write multiple sentences. Do NOT ask a plain question. Frame exchange as a value offer using 'I can show you' or 'I can tell you' language. Use resolver_output.exchange_invitation_variant to pick one of four hook styles: variant 1: 'Tell me your phone  -  I can show you how much you add, or more details?'; variant 2: 'Have a phone? I can tell you how much you add  -  or more details?'; variant 3: 'Want to check how much you would add  -  or more details?'; variant 4: 'I can check the add-on amount if you have a phone  -  or more details?'. Adapt each to natural Amharic while keeping the same short hook structure.\\\\n- When showing a product price, keep the follow-up focused on whether the customer wants that exact model or wants to compare one closely similar option.\\\\n- If the customer is in exchange flow, prefer asking for the current phone's model, storage, or ram details rather than broad trade-in questions.\\\\n- If the customer already has a product in session context and asks about price or availability, continue from that item instead of asking for the model again.\\\\nStyle rules:\\\\n- Sound like a practical Ethiopian phone seller on Telegram without forcing sales behavior into every message.\\\\n- Be short, direct, natural, and sales-aware when the message is actually business-related.\\\\n- For social or off-topic messages, stay natural and do not drag the reply into phone discovery.\\\\n- Do not output unrelated acknowledgment-only text for negotiation, pricing, store-info, or refinement messages.\\\\n- No robotic assistant phrasing.\\\\n- No broad onboarding copy unless this is truly a new conversation.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        understanding_output: $json.understanding_output ?? null,\n        rules_output: $json.rules_output ?? null,\n        resolver_output: $json.resolver_output ?? null,\n        reply_context: {\n          event_type: $json.event?.event_type ?? null,\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          message_count: Number($json.session?.message_count ?? 0),\n          history_count: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.length : 0,\n          has_active_context: Boolean(\n            ($json.session?.conversation_state?.current_flow ?? null)\n            || ($json.session?.conversation_state?.current_topic ?? null)\n            || (Array.isArray($json.session?.conversation_history) && $json.session.conversation_history.length > 0)\n            || (Array.isArray($json.session?.flow_context?.buy_flow?.shown_products) && $json.session.flow_context.buy_flow.shown_products.length > 0)\n            || $json.session?.flow_context?.buy_flow?.current_interest\n          ),\n          should_greet: Boolean($json.event?.event_type === 'start_reset'),\n        },\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-3) : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+          "options": {},
+          "infoMessage": ""
+        },
+        "id": "reply-ai",
+        "name": "Reply AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2740,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "// Validation \u2014 Guaranteed Reply (clean, encoding-safe)\n\n// \u2500\u2500 Step 1: parse reply_text from Reply AI output \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nconst replyPayload = $json ?? {};\n\nconst parseReply = (v) => {\n  if (!v) return '';\n  if (typeof v === 'object' && typeof v.reply_text === 'string') return v.reply_text.trim();\n  if (typeof v === 'string') {\n    try {\n      const p = JSON.parse(v);\n      if (p && typeof p.reply_text === 'string') return p.reply_text.trim();\n    } catch {}\n  }\n  return '';\n};\n\nconst raw_reply = parseReply(replyPayload.choices?.[0]?.message?.content)\n  || parseReply(replyPayload.output_text)\n  || parseReply(replyPayload.text)\n  || parseReply(replyPayload)\n  || '';\n\n// \u2500\u2500 Step 2: safety guard (user-specified logic) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nconst isSafe = raw_reply.length > 0 && raw_reply.length < 600;\nconst fallback = \"Sorry, I didn't catch that clearly. Please ask about price, location, delivery or exchange.\";\nconst reply_text = isSafe ? raw_reply : fallback;\n\n// \u2500\u2500 Step 3: get event + session for downstream nodes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nlet base = {};\ntry {\n  const bdr = $item(0).$node['Business Data Resolver'].json;\n  if (bdr && bdr.rules_output) { base = bdr; }\n  else {\n    const rl = $item(0).$node['Rules Layer'].json;\n    base = rl ?? {};\n  }\n} catch {}\n\nconst event   = (base.event   && typeof base.event   === 'object') ? base.event   : {};\nconst session = (base.session && typeof base.session === 'object') ? base.session : {};\nconst chat_id = event.chat_id ?? event.chatId ?? session.chat_id ?? null;\nconst now = Date.now();\n\n// \u2500\u2500 Step 4: minimal session update for Session Save node \u2500\u2500\u2500\u2500\u2500\nconst isStartReset = event.event_type === 'start_reset' || event.event_type === 'deep_link_start';\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst nextHistory = (isStartReset ? [] : history)\n  .concat([{ role: 'assistant', text: reply_text, timestamp: now }])\n  .slice(-12);\n\nconst updatedSession = {\n  ...session,\n  last_message_at: now,\n  message_count: isStartReset ? 1 : (Math.max(0, Number(session.message_count ?? 0)) + 1),\n  conversation_history: nextHistory,\n};\n\n// \u2500\u2500 Step 5: return all fields downstream nodes depend on \u2500\u2500\u2500\u2500\u2500\nreturn {\n  json: {\n    event,\n    chat_id,\n    safe_to_send: true,\n    reply_text,\n    used_fallback: !isSafe,\n    raw_reply_text: raw_reply,\n    telegram_payload: {\n      chat_id,\n    },\n    session_update_payload: {\n      userId: event.userId ?? null,\n      chatId: chat_id,\n      session: updatedSession,\n    },\n  },\n};",
+          "notice": ""
+        },
+        "id": "side-effects",
+        "name": "Validation",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2980,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendChatAction",
+          "chatId": "={{ $json.event.chatId }}",
+          "action": "typing"
+        },
+        "id": "telegram-typing",
+        "name": "Telegram Typing",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram_TedyTech_Customer"
+          }
+        },
+        "position": [
+          800,
+          180
+        ],
+        "webhookId": "fc32c7fa-7b63-466b-84a2-5e3179823d1e"
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.event?.chat_id || $json.chat_id || $json.message?.chat?.id }}",
+          "text": "={{ $json.reply_text || 'Sorry, something went wrong. Please try again.' }}",
+          "replyMarkup": "none",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send",
+        "name": "Telegram Send",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram_TedyTech_Customer"
+          }
+        },
+        "position": [
+          3460,
+          300
+        ],
+        "webhookId": "e960efb8-ced2-4771-aab8-c66a41e232bb"
+      },
+      {
+        "parameters": {
+          "curlImport": "",
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+          "authentication": "none",
+          "provideSslCertificates": false,
+          "sendQuery": false,
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($item(0).$node['Validation'].json.session_update_payload) }}",
+          "options": {},
+          "infoMessage": ""
+        },
+        "id": "session-save",
+        "name": "Session Save",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3700,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "9fbfb8f2-af27-4229-a0dd-78a7248d5fcc",
+                "leftValue": "={{ $json.rules_output.should_call_resolver }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": false,
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "6cf3b3b0-ecc7-4b84-8cf2-885d6188a469",
+        "name": "Should Resolve",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2260,
+          300
+        ]
+      },
+      {
+        "name": "Admin Handoff Notify?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          2260,
+          520
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.rules_output.reply_mode }}",
+                "rightValue": "handoff_admin",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "4519b087-baf3-4e06-9eba-897088956db3"
+      },
+      {
+        "name": "Admin Handoff Telegram Send",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          2260,
+          720
+        ],
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $env.ADMIN_CHAT_ID }}",
+          "text": "={{ '\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a0\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u00a2\u00e2\u20ac\u017e\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00b0\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a6\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00b8\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a6\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u00a6\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a8 Handoff Alert\\nCustomer: ' + ($json.event.userId ?? $json.event.chatId ?? 'unknown') + '\\nMessage: ' + ($json.event.text ?? '(no text)') + '\\nReason: ' + ($json.rules_output.reasoning ?? 'unknown') }}",
+          "replyMarkup": "none",
+          "additionalFields": {}
+        },
+        "credentials": {
+          "telegramApi": {
+            "id": "fuhHUiZAIRMl1MeP",
+            "name": "Telegram_TedyTech_Admin"
+          }
+        },
+        "id": "ea2f0749-123d-4049-aa06-718fa4c716f9",
+        "webhookId": "d1b09339-67af-4d6a-a442-630a4fbb8d2b"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "2b7c4a7e-5945-4c2a-a27a-cff69a7ca7a4",
+                "leftValue": "={{ $json.safe_to_send }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": false,
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "de4bc6fc-cd00-4ba0-b3c9-d5ecb82c5309",
+        "name": "Safe To Send",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3220,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "96cc838c-278a-485e-88db-72ae2fa4c7c6",
+                "leftValue": "={{ $json.event?.event_type === 'callback_action' }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": false,
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "callback-action-if",
+        "name": "Callback Action?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1400,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const event = $json.event && typeof $json.event === 'object' ? $json.event : {};\nconst session = $json.session && typeof $json.session === 'object' ? $json.session : {};\nconst callbackData = String(event.callback_query?.data ?? '').trim();\nconst REPLY_CONFIRM = '\u120d\u12cd\u12cd\u1321 \u1270\u1228\u130b\u130d\u1327\u120d\u1362 \u12a0\u1235\u1270\u12f3\u12f3\u122a\u12cd \u12eb\u1233\u12cd\u1243\u1278\u12cb\u120d\u1362\\n(Exchange confirmed. Admin has been notified.)';\nconst REPLY_CANCEL  = '\u120d\u12cd\u12cd\u1321 \u1270\u1230\u122d\u12df\u120d\u1362 \u120c\u120b \u12a0\u121b\u122b\u132d \u12a8\u1348\u1208\u1309 \u12ed\u1320\u12ed\u1241\u1362\\n(Exchange canceled. Ask if you want another option.)';\nconst REPLY_UNKNOWN = '\u12ed\u1245\u122d\u1273\u1363 \u12eb\u120d\u1273\u12c8\u1240 \u12f5\u122d\u130a\u1275\u1362 \u12a5\u1263\u12ad\u12ce \u12a5\u1295\u12f0\u1308\u1293 \u12ed\u121e\u12ad\u1229\u1362\\n(Unknown action, please try again.)';\nif (!['confirm_exchange', 'cancel_exchange'].includes(callbackData)) {\n  console.warn(JSON.stringify({ node: 'Callback Action Handler', warning: 'unknown_callback', callbackData }));\n}\nconst reply_text = callbackData === 'confirm_exchange'\n  ? REPLY_CONFIRM\n  : callbackData === 'cancel_exchange'\n  ? REPLY_CANCEL\n  : REPLY_UNKNOWN;\nconst updatedSession = {\n  ...session,\n  last_message_at: Date.now(),\n  message_count: Math.max(0, Number(session.message_count ?? 0)) + 1,\n  admin_escalation: callbackData === 'confirm_exchange'\n    ? { required: true, reason: 'exchange_confirmed', status: 'pending' }\n    : (session.admin_escalation && typeof session.admin_escalation === 'object' ? session.admin_escalation : { required: false, reason: null, status: null }),\n  exchange_details: {\n    ...(session.exchange_details || {}),\n    last_callback_action: callbackData,\n    confirmed_at: callbackData === 'confirm_exchange' ? Date.now() : (session.exchange_details?.confirmed_at ?? null),\n    current_interest: session.flow_context?.buy_flow?.current_interest ?? null,\n  },\n};\nreturn [{\n  json: {\n    event,\n    session,\n    callbackData,\n    reply_text,\n    telegram_payload: { chat_id: event.chatId ?? null, text: reply_text },\n    session_update_payload: { userId: event.userId ?? null, chatId: event.chatId ?? null, session: updatedSession },\n    admin_notification_payload: callbackData === 'confirm_exchange'\n      ? {\n          customer_id: session.customer_id ?? event.userId ?? null,\n          chat_id: event.chatId ?? null,\n          action: 'confirm_exchange',\n          exchange_details: updatedSession.exchange_details,\n          message_text: [\n            '\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a0\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u00a2\u00e2\u20ac\u017e\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u201a\u00c2\u00a0\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00be\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u00a6\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00b0\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a0\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u00a2\u00e2\u20ac\u017e\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a6\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u00a6\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00b8\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a0\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u00a2\u00e2\u20ac\u017e\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a6\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u00a6\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u009d\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a0\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u00a2\u00e2\u20ac\u017e\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a6\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00e2\u20ac\u00a0\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u201e\u00a2\u00c3\u0192\u00c6\u2019\u00c3\u201a\u00c2\u00a2\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u201a\u00c2\u00ac\u00c3\u0192\u00e2\u20ac\u00a6\u00c3\u201a\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u2020\u00e2\u20ac\u2122\u00c3\u0192\u00c2\u00a2\u00c3\u00a2\u00e2\u20ac\u0161\u00c2\u00ac\u00c3\u2026\u00c2\u00a1\u00c3\u0192\u00c6\u2019\u00c3\u00a2\u00e2\u201a\u00ac\u00c5\u00a1\u00c3\u0192\u00e2\u20ac\u0161\u00c3\u201a\u00c2\u009d Exchange confirmed by customer',\n            `Customer ID: ${session.customer_id ?? event.userId ?? 'unknown'}`,\n            `Customer Chat ID: ${event.chatId ?? 'unknown'}`,\n            `Action: ${callbackData}`,\n            `Current interest: ${typeof updatedSession.exchange_details.current_interest === 'object' ? JSON.stringify(updatedSession.exchange_details.current_interest) : (updatedSession.exchange_details.current_interest ?? 'unknown')}`,\n            `Model: ${updatedSession.exchange_details.model ?? 'unknown'}`,\n            `Storage: ${updatedSession.exchange_details.storage ?? 'unknown'}`,\n            `Condition: ${updatedSession.exchange_details.condition ?? 'unknown'}`,\n            `RAM: ${updatedSession.exchange_details.ram ?? 'unknown'}`,\n          ].join('\\n'),\n        }\n      : null,\n  },\n}];",
+          "notice": ""
+        },
+        "id": "callback-action-handler",
+        "name": "Callback Action Handler",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1600,
+          520
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.telegram_payload.chat_id }}",
+          "text": "={{ $json.reply_text }}",
+          "replyMarkup": "none",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "id": "callback-telegram-send",
+        "name": "Callback Telegram Send",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "fuhHUiZAIRMl1MeP",
+            "name": "Telegram_TedyTech_Admin"
+          }
+        },
+        "position": [
+          3700,
+          520
+        ],
+        "webhookId": "d5873b86-22fd-47cc-8731-e3e754e98971"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "boolean": [
+              {
+                "value1": "={{ $json.admin_notification_payload !== null }}",
+                "operation": "equal",
+                "value2": true
+              }
+            ]
+          },
+          "looseTypeValidation": false,
+          "options": {}
+        },
+        "id": "callback-admin-notify-if",
+        "name": "Callback Admin Notify?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          4160,
+          640
+        ]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.admin_notification_payload?.admin_chat_id ?? $env.ADMIN_TELEGRAM_CHAT_ID ?? $env.ADMIN_CHAT_ID }}",
+          "text": "={{ $json.admin_notification_payload?.message_text ?? '' }}",
+          "replyMarkup": "none",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "id": "callback-admin-telegram-send",
+        "name": "Callback Admin Telegram Send",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "fuhHUiZAIRMl1MeP",
+            "name": "Telegram_TedyTech_Admin"
+          }
+        },
+        "position": [
+          4460,
+          640
+        ],
+        "webhookId": "1bf92171-3c67-47fa-98e7-5546add67125"
+      },
+      {
+        "parameters": {
+          "curlImport": "",
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+          "authentication": "none",
+          "provideSslCertificates": false,
+          "sendQuery": false,
+          "sendHeaders": true,
+          "specifyHeaders": "keypair",
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "json",
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.session_update_payload) }}",
+          "options": {},
+          "infoMessage": ""
+        },
+        "id": "callback-session-save",
+        "name": "Callback Session Save",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3940,
+          520
+        ]
+      },
+      {
+        "id": "merge-node",
+        "name": "Merge Node",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1640,
+          300
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const guard = $input.first().json;\nconst base = $('Session Bootstrap').first().json;\n\nif (!base || !guard) {\n  throw new Error('Merge node received invalid inputs');\n}\n\nreturn [{\n  json: {\n    event: base.event,\n    session: base.session,\n    client_config: base.client_config,\n    understanding_output: guard.understanding_output,\n    understanding_meta: guard.understanding_meta || {\n      valid: false,\n      fallback_applied: true,\n      issues: ['missing_meta']\n    }\n  }\n}];",
+          "notice": ""
+        }
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const input = $json ?? {};\n\nreturn [{\n  json: {\n    ...input,\n    resolver_output: null\n  }\n}];",
+          "notice": ""
+        },
+        "id": "set-no-resolver-output-1775599960250",
+        "name": "Set No-Resolver Output",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2500,
+          500
+        ]
+      }
+    ],
+    "connections": {
+      "Telegram Input": {
+        "main": [
+          [
+            {
+              "node": "Event Normalizer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Event Normalizer": {
+        "main": [
+          [
+            {
+              "node": "Session Load",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Telegram Typing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Load": {
+        "main": [
+          [
+            {
+              "node": "Session Bootstrap",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Bootstrap": {
+        "main": [
+          [
+            {
+              "node": "Callback Action?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Callback Action?": {
+        "main": [
+          [
+            {
+              "node": "Callback Action Handler",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Understanding AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Understanding AI": {
+        "main": [
+          [
+            {
+              "node": "Understanding JSON Guard - Pure Validator",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rules Layer": {
+        "main": [
+          [
+            {
+              "node": "Should Resolve",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Admin Handoff Notify?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should Resolve": {
+        "main": [
+          [
+            {
+              "node": "Product Search (Convex Test)",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Set No-Resolver Output",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Business Data Resolver": {
+        "main": [
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Reply AI": {
+        "main": [
+          [
+            {
+              "node": "Validation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validation": {
+        "main": [
+          [
+            {
+              "node": "Safe To Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Safe To Send": {
+        "main": [
+          [
+            {
+              "node": "Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Telegram Send": {
+        "main": [
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Callback Action Handler": {
+        "main": [
+          [
+            {
+              "node": "Callback Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Callback Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Callback Admin Notify?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Callback Admin Notify?": {
+        "main": [
+          [
+            {
+              "node": "Callback Admin Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Callback Telegram Send": {
+        "main": [
+          [
+            {
+              "node": "Callback Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Callback Session Save": {
+        "main": []
+      },
+      "Understanding JSON Guard - Pure Validator": {
+        "main": [
+          [
+            {
+              "node": "Merge Node",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Product Search (Convex Test)": {
+        "main": [
+          [
+            {
+              "node": "Business Data Resolver",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Admin Handoff Notify?": {
+        "main": [
+          [
+            {
+              "node": "Admin Handoff Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Node": {
+        "main": [
+          [
+            {
+              "node": "Rules Layer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set No-Resolver Output": {
+        "main": [
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "callerPolicy": "workflowsFromSameOwner",
+      "availableInMCP": false,
+      "executionOrder": "v1",
+      "binaryMode": "separate"
+    },
+    "staticData": {},
+    "pinData": {}
+  },
+  "workflowVersionId": "313f7c30-cb4f-4b16-bba9-3afdf6ed14cc",
+  "customData": {}
+}

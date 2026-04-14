@@ -1,0 +1,3 @@
+- **Event Normalizer**: Removed redundant `chatId` key; downstream nodes now use `chat_id` exclusively.
+- **Session Bootstrap**: Simplified event rescue logic to trust the `Event Normalizer` as the primary upstream.
+- **Validation**: Standardized chat_id resolution to snake_case.

@@ -1,0 +1,80 @@
+{
+  "updatedAt": "2026-04-02T14:52:22.955Z",
+  "createdAt": "2026-04-02T14:52:22.955Z",
+  "id": "9XuOQHcbIZqE8scq",
+  "name": "Abenier Bot Logic Base",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { ok: true, message: \"base workflow ready\" } }];"
+      },
+      "id": "base-code",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "ef436681-be89-46bd-8bec-a1ab20eb24f7",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-02T14:52:22.958Z",
+      "createdAt": "2026-04-02T14:52:22.958Z",
+      "role": "workflow:owner",
+      "workflowId": "9XuOQHcbIZqE8scq",
+      "projectId": "0yTr2eWi0tTJaMgu",
+      "project": {
+        "updatedAt": "2026-03-31T22:29:30.641Z",
+        "createdAt": "2026-03-31T22:17:25.718Z",
+        "id": "0yTr2eWi0tTJaMgu",
+        "name": "Abenezer Tadiyos <babig7633@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f2b22b50-c125-4a5c-b9fe-cd14fe26e319"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
+}

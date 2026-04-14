@@ -1,0 +1,1072 @@
+{
+  "updatedAt": "2026-04-02T22:11:35.910Z",
+  "createdAt": "2026-04-02T17:36:18.951Z",
+  "id": "hc55q2zfas7gG1yu",
+  "name": "Abenier Bot Logic Base",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "telegram-input",
+      "name": "Telegram Input",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+      },
+      "id": "event-normalizer",
+      "name": "Event Normalizer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"userId\": \"={{ $json.event.userId }}\",\n  \"chatId\": \"={{ $json.event.chatId }}\"\n}",
+        "options": {}
+      },
+      "id": "session-load",
+      "name": "Session Load",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nif (!event) {\n  try {\n    event = $item(0).$node['Event Normalizer'].json.event;\n  } catch {\n    event = null;\n  }\n}\n\nevent = event && typeof event === 'object' ? event : {};\nconst remoteEnvelope = payload.session && typeof payload.session === 'object'\n  ? payload.session\n  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);\nconst remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')\n  ? remoteEnvelope.data\n  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);\nconst existing = remoteData && typeof remoteData === 'object' ? remoteData : {};\nconst now = Date.now();\nconst history = Array.isArray(existing.conversation_history)\n  ? existing.conversation_history\n  : (Array.isArray(existing.message_history) ? existing.message_history : []);\nconst shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)\n  ? existing.flow_context.buy_flow.shown_products\n  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);\nconst currentInterest = existing.flow_context?.buy_flow?.current_interest\n  ?? existing.active_product_id\n  ?? existing.selected_option\n  ?? null;\nconst currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;\nconst currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;\nconst active = existing.conversation_state?.is_active;\nconst baseCount = Number.isFinite(Number(existing.message_count))\n  ? Number(existing.message_count)\n  : history.filter((item) => item && typeof item === 'object').length;\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeBudget = (value) => {\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst currentInterestRecord = currentInterest && typeof currentInterest === 'object' ? currentInterest : {};\nconst existingConstraints = existing.collected_constraints && typeof existing.collected_constraints === 'object'\n  ? existing.collected_constraints\n  : {};\nconst collected_constraints = {\n  budget_etb: normalizeBudget(existingConstraints.budget_etb ?? existing.budget_etb ?? null),\n  brand: normalizeText(existingConstraints.brand ?? currentInterestRecord.brand ?? null),\n  model: normalizeText(existingConstraints.model ?? currentInterestRecord.model ?? currentInterestRecord.name ?? null),\n  storage: normalizeText(existingConstraints.storage ?? currentInterestRecord.storage ?? null),\n  condition: normalizeText(existingConstraints.condition ?? currentInterestRecord.condition ?? null),\n};\nconst session = {\n  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(existing.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, baseCount),\n  conversation_state: {\n    current_topic: currentTopic,\n    current_flow: currentFlow,\n    is_active: typeof active === 'boolean' ? active : true,\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  collected_constraints,\n  last_asked_key: normalizeText(existing.last_asked_key ?? existing.last_asked_field ?? null),\n  conversation_history: history.slice(-12).filter((item) => item && typeof item === 'object'),\n  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'\n    ? {\n        required: Boolean(existing.admin_escalation.required),\n        reason: existing.admin_escalation.reason ?? null,\n        status: existing.admin_escalation.status ?? null,\n      }\n    : {\n        required: false,\n        reason: null,\n        status: null,\n      },\n};\nconst client_config = {\n  \"store_name\": \"TedyTech\",\n  \"default_language\": \"am\",\n  \"supports_exchange\": true,\n  \"supports_finance\": false,\n  \"telegram_bot_name\": \"TedyTech Bot\"\n};\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',\n  },\n}];"
+      },
+      "id": "session-bootstrap",
+      "name": "Session Bootstrap",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 1 Understanding AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object. No markdown. No explanation. No extra text.\\\\nDo not generate reply text. Do not choose workflow actions. Do not ask questions.\\\\nInterpret the message by conversational function first, using session context before surface wording.\\\\nUse current topic, current flow, shown products, current interest, stored constraints, and recent conversation history actively.\\\\nPrefer honest ambiguity over wrong forced classification.\\\\nReuse known constraints when the customer is refining or following up.\\\\nDistinguish fresh requests, refinements, follow-ups, negotiation, store-info, acknowledgment, off-topic, and ambiguous references.\\\\nNegotiation is separate from generic product discovery.\\\\nStore-info is separate from product search.\\\\nIf the customer references previous options and session context is enough, resolve the reference.\\\\nIf the reference cannot be resolved confidently, mark it as ambiguous.\\\\nDo not output old fields such as user_need, next_action, tentative_flow, ambiguity, evidence_accumulated, or extracted_need.\\\\nUse exactly this schema:\\\\n{\\\"message_function\\\":\\\"fresh_request | refinement | follow_up | negotiation | info_request | acknowledgment | off_topic | ambiguous_reference\\\",\\\"business_intent\\\":\\\"buy | exchange | store_info | support | none\\\",\\\"topic\\\":\\\"product_search | pricing | stock_check | exchange | store_info | support | general | none\\\",\\\"context_relation\\\":\\\"new_topic | continues_current_topic | refines_known_constraints | references_previous_options | unclear\\\",\\\"reference_resolution\\\":{\\\"reference_type\\\":\\\"none | last_option | cheaper_option | first_option | last_option_explicit | specific_product | unclear\\\",\\\"resolved\\\":false,\\\"resolved_product_id\\\":null,\\\"resolved_product_name\\\":null},\\\"constraints_update\\\":{\\\"budget_etb\\\":null,\\\"brand\\\":null,\\\"model\\\":null,\\\"storage\\\":null,\\\"condition\\\":null},\\\"known_constraints_used\\\":{\\\"budget_etb\\\":null,\\\"brand\\\":null,\\\"model\\\":null},\\\"should_reuse_existing_context\\\":true,\\\"confidence\\\":0.0,\\\"ambiguity_reason\\\":null,\\\"reasoning\\\":\\\"string\\\"}\\\\nReasoning boundaries:\\\\n- Simple greeting/social opener with no business ask should usually be off_topic, not a fresh buy request.\\\\n- A short reply like thanks/ok that closes the previous answer should be acknowledgment, not a new request.\\\\n- If a customer already has context and adds budget/model/storage/condition, that is refinement.\\\\n- If the customer says available?, that one, or the cheaper one after prior context, interpret it relative to that context first.\\\\n- If a customer asks for lower price or a cheaper deal on an active item, classify it as negotiation.\\\\n- If the customer asks where the shop is or similar business information, classify it as info_request with store_info intent.\\\\n- If the session already contains useful constraints, indicate that they should be reused.\\\\nConfidence must be between 0 and 1.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        event: {\n          event_type: $json.event?.event_type ?? null,\n          deep_link: $json.event?.deep_link ?? null,\n        },\n        session_context: {\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          collected_constraints: $json.session?.collected_constraints ?? {\n            budget_etb: null,\n            brand: null,\n            model: null,\n            storage: null,\n            condition: null,\n          },\n          last_asked_key: $json.session?.last_asked_key ?? null,\n          current_interest: $json.session?.flow_context?.buy_flow?.current_interest ?? null,\n          shown_products: Array.isArray($json.session?.flow_context?.buy_flow?.shown_products)\n            ? $json.session.flow_context.buy_flow.shown_products.slice(0, 5)\n            : [],\n        },\n        last_messages: Array.isArray($json.session?.conversation_history)\n          ? $json.session.conversation_history.slice(-6)\n          : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+        "options": {}
+      },
+      "id": "understanding-ai",
+      "name": "Understanding AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = (() => {\n  try {\n    return $item(0).$node['Session Bootstrap'].json ?? {};\n  } catch {\n    return {};\n  }\n})();\nconst payload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst issues = [];\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (isRecord(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return isRecord(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst clamp = (value, min, max) => Math.min(max, Math.max(min, value));\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeEnum = (value, allowed, synonyms, label) => {\n  if (value === null && allowed.includes(null)) return null;\n  if (typeof value === 'string') {\n    const normalized = synonyms[value.trim().toLowerCase()] ?? value.trim().toLowerCase();\n    if (allowed.includes(normalized)) return normalized;\n    issues.push(label + '_invalid:' + value);\n  }\n  return undefined;\n};\n\nconst rawResponse = parseJsonObject(payload.choices?.[0]?.message?.content)\n  || parseJsonObject(payload.output_text)\n  || parseJsonObject(payload.text)\n  || parseJsonObject(payload.data)\n  || parseJsonObject(payload.result)\n  || parseJsonObject(payload);\nif (!rawResponse) {\n  issues.push('understanding_response_not_parseable');\n}\n\nconst text = String(event.text ?? '').trim();\nconst lower = text.toLowerCase();\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst shownProductsRaw = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products\n  : [];\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return {\n      id: String(value),\n      brand: null,\n      model: null,\n      storage: null,\n      condition: null,\n      price_etb: null,\n      name: String(value),\n      raw: value,\n      index,\n    };\n  }\n  if (!isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.name ?? value.title),\n    storage: normalizeText(value.storage),\n    condition: normalizeText(value.condition),\n    price_etb: normalizeNullableNumber(priceValue),\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || normalizeText(value.name ?? value.title),\n    raw: value,\n    index,\n  };\n};\nconst shownProducts = shownProductsRaw.map(normalizeProduct).filter(Boolean);\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);\nconst currentFlow = session.conversation_state?.current_flow ?? null;\nconst currentTopic = session.conversation_state?.current_topic ?? null;\n\nconst existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst sessionConstraints = {\n  budget_etb: normalizeNullableNumber(existingConstraintsSource.budget_etb),\n  brand: normalizeText(existingConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(existingConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeText(existingConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(existingConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\n\nconst hasActiveContext = Boolean(\n  currentFlow\n  || currentTopic\n  || shownProducts.length > 0\n  || currentInterest\n  || history.length > 0\n  || Object.values(sessionConstraints).some((value) => value !== null)\n);\n\nconst currencyMatches = [...text.matchAll(/(?:\\b\\d{3,6}\\s*(?:birr|etb)\\b)|(?:\\b\\d+(?:\\.\\d+)?\\s*k\\b)|(?:\\$\\s*\\d+(?:\\.\\d+)?)/gi)];\nconst parseBudget = () => {\n  for (const match of currencyMatches) {\n    const raw = match[0].trim().toLowerCase();\n    if (raw.includes('$')) continue;\n    if (raw.endsWith('k')) {\n      const numeric = Number(raw.replace(/k$/i, ''));\n      if (Number.isFinite(numeric)) return numeric * 1000;\n    }\n    const digits = raw.replace(/[^\\d.]/g, '');\n    const numeric = Number(digits);\n    if (Number.isFinite(numeric)) return numeric;\n  }\n  return null;\n};\n\nconst brandPattern = /\\b(iphone|samsung|tecno|infinix|redmi|xiaomi|pixel|oppo|vivo|realme|itel|nokia)\\b/i;\nconst brandMatch = text.match(brandPattern);\nconst modelPattern = /\\b(iphone\\s*\\d+(?:\\s*(?:pro|max|plus|mini))?|samsung\\s*[a-z0-9+ ]+|tecno\\s*[a-z0-9+ ]+|infinix\\s*[a-z0-9+ ]+|redmi\\s*[a-z0-9+ ]+|xiaomi\\s*[a-z0-9+ ]+|pixel\\s*[a-z0-9+ ]+|oppo\\s*[a-z0-9+ ]+|vivo\\s*[a-z0-9+ ]+|realme\\s*[a-z0-9+ ]+|itel\\s*[a-z0-9+ ]+|nokia\\s*[a-z0-9+ ]+)\\b/gi;\nconst modelMatches = [...text.matchAll(modelPattern)].map((match) => match[1].trim()).filter(Boolean);\nconst storageMatch = text.match(/\\b(64|128|256|512|1024)\\s*gb\\b/i);\nconst conditionMatch = text.match(/\\b(new|used|sealed|refurbished|clean)\\b/i);\n\nconst pricingCue = /\\b(price|how much|cost|budget|last price)\\b/i.test(lower);\nconst stockCue = /\\b(available|availability|stock|in stock)\\b/i.test(lower);\nconst exchangeCue = /\\b(exchange|swap|trade\\s?in|trade)\\b/i.test(lower);\nconst storeInfoCue = /\\b(where|location|address|shop|store|branch|area|hours|open|close|delivery|payment|warranty)\\b/i.test(lower);\nconst supportCue = /\\b(problem|issue|support|help|complaint|broken|damaged)\\b/i.test(lower);\nconst negotiationCue = /\\b(cheaper|discount|lower|reduce|best price|nego)\\b/i.test(lower);\nconst acknowledgmentCue = /^(ok(ay)?|thanks|thank you|got it|noted|alright|sure)\\b/i.test(lower) && text.split(/\\s+/).filter(Boolean).length <= 4;\nconst offTopicCue = /\\b(weather|football|soccer|movie|music|joke|sleep|news|time)\\b/i.test(lower);\n\nconst referenceDefinitions = [\n  { type: 'cheaper_option', test: (value) => /\\b(cheaper|cheapest)\\b/i.test(value) },\n  { type: 'first_option', test: (value) => /\\bfirst one\\b/i.test(value) },\n  { type: 'last_option_explicit', test: (value) => /\\blast one\\b/i.test(value) },\n  { type: 'last_option', test: (value) => /\\b(that one|the one|this one|same one)\\b/i.test(value) },\n];\nconst referenceHint = referenceDefinitions.find((item) => item.test(text));\n\nconst resolveReferenceCandidate = (referenceType) => {\n  const byCheapest = [...shownProducts]\n    .filter((item) => Number.isFinite(item.price_etb))\n    .sort((a, b) => a.price_etb - b.price_etb)[0] ?? null;\n  const byFirst = shownProducts[0] ?? null;\n  const byLast = shownProducts[shownProducts.length - 1] ?? currentInterest ?? null;\n  if (referenceType === 'cheaper_option') return byCheapest;\n  if (referenceType === 'first_option') return byFirst;\n  if (referenceType === 'last_option' || referenceType === 'last_option_explicit') return byLast;\n  return null;\n};\n\nconst rawReference = isRecord(rawResponse?.reference_resolution) ? rawResponse.reference_resolution : {};\nlet reference_type = normalizeEnum(rawReference.reference_type, ['none', 'last_option', 'cheaper_option', 'first_option', 'last_option_explicit', 'specific_product', 'unclear'], {\n  none: 'none',\n  latest: 'last_option',\n  previous_option: 'last_option',\n  prior_option: 'last_option',\n  cheaper: 'cheaper_option',\n  cheapest: 'cheaper_option',\n  first: 'first_option',\n  last: 'last_option_explicit',\n  product: 'specific_product',\n  specific: 'specific_product',\n  ambiguous: 'unclear',\n}, 'reference_type');\nif (reference_type === undefined) {\n  reference_type = referenceHint?.type ?? 'none';\n}\n\nlet resolved_product_id = normalizeText(rawReference.resolved_product_id);\nlet resolved_product_name = normalizeText(rawReference.resolved_product_name);\nlet resolved = typeof rawReference.resolved === 'boolean' ? rawReference.resolved : false;\n\nconst exactProductName = normalizeText(modelMatches[0] ?? null);\nif (!resolved && reference_type === 'specific_product' && exactProductName) {\n  const exactMatch = shownProducts.find((item) => (item.name ?? '').toLowerCase() === exactProductName.toLowerCase())\n    ?? (currentInterest && (currentInterest.name ?? '').toLowerCase() === exactProductName.toLowerCase() ? currentInterest : null);\n  if (exactMatch) {\n    resolved = true;\n    resolved_product_id = exactMatch.id;\n    resolved_product_name = exactMatch.name ?? exactProductName;\n  } else {\n    resolved_product_name = exactProductName;\n  }\n}\nif (!resolved && ['last_option', 'cheaper_option', 'first_option', 'last_option_explicit'].includes(reference_type)) {\n  const candidate = resolveReferenceCandidate(reference_type);\n  if (candidate) {\n    resolved = true;\n    resolved_product_id = candidate.id;\n    resolved_product_name = candidate.name ?? null;\n  }\n}\nif (reference_type === 'none' && exactProductName && (shownProducts.length > 0 || currentInterest)) {\n  reference_type = 'specific_product';\n}\nif (reference_type !== 'none' && !resolved && !resolved_product_name) {\n  resolved_product_name = exactProductName;\n}\nif (reference_type !== 'none' && !resolved && reference_type !== 'specific_product') {\n  issues.push('reference_unresolved:' + reference_type);\n}\n\nconst rawConstraints = isRecord(rawResponse?.constraints_update) ? rawResponse.constraints_update : {};\nconst constraints_update = {\n  budget_etb: normalizeNullableNumber(rawConstraints.budget_etb) ?? parseBudget(),\n  brand: normalizeText(rawConstraints.brand) ?? normalizeText(brandMatch?.[1] ?? null),\n  model: normalizeText(rawConstraints.model) ?? exactProductName,\n  storage: normalizeText(rawConstraints.storage) ?? normalizeText(storageMatch?.[0] ?? null),\n  condition: normalizeText(rawConstraints.condition) ?? normalizeText(conditionMatch?.[1] ?? null),\n};\n\nconst hasConstraintUpdate = Object.values(constraints_update).some((value) => value !== null);\n\nconst rawMessageFunction = normalizeEnum(rawResponse?.message_function, ['fresh_request', 'refinement', 'follow_up', 'negotiation', 'info_request', 'acknowledgment', 'off_topic', 'ambiguous_reference'], {\n  new_request: 'fresh_request',\n  new_topic: 'fresh_request',\n  refine: 'refinement',\n  refinement_of_constraints: 'refinement',\n  followup: 'follow_up',\n  follow_up_request: 'follow_up',\n  bargain: 'negotiation',\n  negotiate: 'negotiation',\n  store_info: 'info_request',\n  info: 'info_request',\n  ack: 'acknowledgment',\n  acknowledgement: 'acknowledgment',\n  greeting: 'off_topic',\n  small_talk: 'off_topic',\n  offtopic: 'off_topic',\n  ambiguous: 'ambiguous_reference',\n}, 'message_function');\nconst rawBusinessIntent = normalizeEnum(rawResponse?.business_intent, ['buy', 'exchange', 'store_info', 'support', 'none'], {\n  product_search: 'buy',\n  pricing: 'buy',\n  stock_check: 'buy',\n  shop_info: 'store_info',\n  info_request: 'store_info',\n  faq: 'store_info',\n  help: 'support',\n  null: 'none',\n}, 'business_intent');\nconst rawTopic = normalizeEnum(rawResponse?.topic, ['product_search', 'pricing', 'stock_check', 'exchange', 'store_info', 'support', 'general', 'none'], {\n  product: 'product_search',\n  buy: 'product_search',\n  price: 'pricing',\n  stock: 'stock_check',\n  availability: 'stock_check',\n  info: 'store_info',\n  info_request: 'store_info',\n  shop_info: 'store_info',\n  faq: 'store_info',\n  help: 'support',\n  support_request: 'support',\n  null: 'none',\n}, 'topic');\nconst rawContextRelation = normalizeEnum(rawResponse?.context_relation, ['new_topic', 'continues_current_topic', 'refines_known_constraints', 'references_previous_options', 'unclear'], {\n  new: 'new_topic',\n  continue: 'continues_current_topic',\n  continuing: 'continues_current_topic',\n  refine: 'refines_known_constraints',\n  refinement: 'refines_known_constraints',\n  references_previous: 'references_previous_options',\n  previous_options: 'references_previous_options',\n  follow_up: 'continues_current_topic',\n}, 'context_relation');\n\nconst currentFlowToIntent = {\n  buy: 'buy',\n  exchange: 'exchange',\n  info: 'store_info',\n  support: 'support',\n};\n\nconst inferredTopic = rawTopic ?? (\n  storeInfoCue ? 'store_info'\n  : exchangeCue ? 'exchange'\n  : supportCue ? 'support'\n  : negotiationCue ? 'pricing'\n  : stockCue ? 'stock_check'\n  : (pricingCue || constraints_update.budget_etb !== null) ? 'pricing'\n  : (constraints_update.brand || constraints_update.model || reference_type !== 'none') ? 'product_search'\n  : offTopicCue ? 'none'\n  : (hasActiveContext && currentFlow === 'buy') ? 'general'\n  : text ? 'general' : 'none'\n);\n\nconst inferredBusinessIntent = rawBusinessIntent ?? (\n  inferredTopic === 'exchange' ? 'exchange'\n  : inferredTopic === 'store_info' ? 'store_info'\n  : inferredTopic === 'support' ? 'support'\n  : inferredTopic === 'none' ? (currentFlowToIntent[currentFlow] ?? 'none')\n  : (['pricing', 'stock_check', 'product_search', 'general'].includes(inferredTopic) && (hasActiveContext || constraints_update.brand || constraints_update.model || reference_type !== 'none' || pricingCue || stockCue))\n    ? 'buy'\n    : 'none'\n);\n\nconst inferredContextRelation = rawContextRelation ?? (\n  reference_type !== 'none' ? 'references_previous_options'\n  : hasConstraintUpdate && hasActiveContext ? 'refines_known_constraints'\n  : hasActiveContext && inferredBusinessIntent !== 'none' ? 'continues_current_topic'\n  : text ? 'new_topic' : 'unclear'\n);\n\nconst rawShouldReuse = typeof rawResponse?.should_reuse_existing_context === 'boolean'\n  ? rawResponse.should_reuse_existing_context\n  : undefined;\nconst should_reuse_existing_context = rawShouldReuse !== undefined\n  ? rawShouldReuse\n  : (inferredContextRelation !== 'new_topic'\n    || ['refinement', 'follow_up', 'negotiation', 'ambiguous_reference'].includes(rawMessageFunction ?? '')\n    || reference_type !== 'none');\n\nconst inferredMessageFunction = rawMessageFunction ?? (\n  acknowledgmentCue ? 'acknowledgment'\n  : (reference_type !== 'none' && !resolved) ? 'ambiguous_reference'\n  : reference_type !== 'none' ? 'follow_up'\n  : inferredTopic === 'store_info' ? 'info_request'\n  : negotiationCue ? 'negotiation'\n  : hasConstraintUpdate && hasActiveContext ? 'refinement'\n  : hasActiveContext && inferredBusinessIntent !== 'none' ? 'follow_up'\n  : offTopicCue || inferredBusinessIntent === 'none' ? 'off_topic'\n  : 'fresh_request'\n);\n\nconst rawKnownConstraints = isRecord(rawResponse?.known_constraints_used) ? rawResponse.known_constraints_used : {};\nconst known_constraints_used = {\n  budget_etb: normalizeNullableNumber(rawKnownConstraints.budget_etb) ?? (should_reuse_existing_context ? sessionConstraints.budget_etb : null),\n  brand: normalizeText(rawKnownConstraints.brand) ?? (should_reuse_existing_context ? sessionConstraints.brand : null),\n  model: normalizeText(rawKnownConstraints.model) ?? (should_reuse_existing_context ? sessionConstraints.model : null),\n};\n\nconst rawConfidence = Number(rawResponse?.confidence);\nlet confidence = Number.isFinite(rawConfidence)\n  ? clamp(rawConfidence, 0, 1)\n  : (\n    inferredMessageFunction === 'acknowledgment' ? 0.96\n    : inferredMessageFunction === 'off_topic' ? 0.83\n    : inferredMessageFunction === 'ambiguous_reference' ? 0.55\n    : inferredMessageFunction === 'negotiation' ? 0.8\n    : inferredMessageFunction === 'follow_up' ? 0.78\n    : inferredMessageFunction === 'refinement' ? 0.82\n    : inferredMessageFunction === 'info_request' ? 0.85\n    : 0.76\n  );\nif (reference_type !== 'none' && !resolved) {\n  confidence = Math.min(confidence, 0.58);\n}\nif (!rawResponse) {\n  confidence = Math.min(confidence, 0.62);\n}\n\nconst ambiguity_reason = normalizeText(rawResponse?.ambiguity_reason)\n  ?? ((reference_type !== 'none' && !resolved) ? 'reference_not_resolved_from_session'\n    : (inferredContextRelation === 'unclear' ? 'message_needs_more_context' : null));\n\nconst understanding_output = {\n  message_function: inferredMessageFunction,\n  business_intent: inferredBusinessIntent,\n  topic: inferredTopic,\n  context_relation: inferredContextRelation,\n  reference_resolution: {\n    reference_type,\n    resolved: Boolean(resolved),\n    resolved_product_id: resolved_product_id ?? null,\n    resolved_product_name: resolved_product_name ?? null,\n  },\n  constraints_update,\n  known_constraints_used,\n  should_reuse_existing_context: Boolean(should_reuse_existing_context),\n  confidence,\n  ambiguity_reason,\n  reasoning: normalizeText(rawResponse?.reasoning) ?? 'guard_normalized_structured_understanding',\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    understanding_meta: {\n      valid: issues.length === 0,\n      issues,\n      parsed_source: rawResponse,\n      timestamp: Date.now(),\n    },\n  },\n}];"
+      },
+      "id": "validation-node",
+      "name": "Understanding JSON Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst understanding_meta = input.understanding_meta && typeof input.understanding_meta === 'object' ? input.understanding_meta : {};\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return { id: String(value), brand: null, model: null, storage: null, condition: null, price_etb: null, name: String(value), raw: value, index };\n  }\n  if (!isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.name ?? value.title),\n    storage: normalizeText(value.storage),\n    condition: normalizeText(value.condition),\n    price_etb: normalizeNullableNumber(priceValue),\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || normalizeText(value.name ?? value.title),\n    raw: value,\n    index,\n  };\n};\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);\nconst currentFlow = session.conversation_state?.current_flow ?? null;\nconst currentTopic = session.conversation_state?.current_topic ?? null;\nconst existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst existingConstraints = {\n  budget_etb: normalizeNullableNumber(existingConstraintsSource.budget_etb),\n  brand: normalizeText(existingConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(existingConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeText(existingConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(existingConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\n\nconst constraintsUpdateSource = isRecord(understanding_output.constraints_update) ? understanding_output.constraints_update : {};\nconst constraints_update = {\n  budget_etb: normalizeNullableNumber(constraintsUpdateSource.budget_etb),\n  brand: normalizeText(constraintsUpdateSource.brand),\n  model: normalizeText(constraintsUpdateSource.model),\n  storage: normalizeText(constraintsUpdateSource.storage),\n  condition: normalizeText(constraintsUpdateSource.condition),\n};\nconst mergedConstraints = {\n  budget_etb: constraints_update.budget_etb ?? existingConstraints.budget_etb,\n  brand: constraints_update.brand ?? existingConstraints.brand,\n  model: constraints_update.model ?? existingConstraints.model,\n  storage: constraints_update.storage ?? existingConstraints.storage,\n  condition: constraints_update.condition ?? existingConstraints.condition,\n};\n\nconst referenceSource = isRecord(understanding_output.reference_resolution) ? understanding_output.reference_resolution : {};\nconst reference_resolution = {\n  reference_type: normalizeText(referenceSource.reference_type) ?? 'none',\n  resolved: Boolean(referenceSource.resolved),\n  resolved_product_id: normalizeText(referenceSource.resolved_product_id),\n  resolved_product_name: normalizeText(referenceSource.resolved_product_name),\n};\n\nconst resolveProductById = (id) => shownProducts.find((item) => item.id === id) ?? (currentInterest?.id === id ? currentInterest : null) ?? null;\nconst resolvedProduct = reference_resolution.resolved && reference_resolution.resolved_product_id\n  ? resolveProductById(reference_resolution.resolved_product_id)\n  : null;\n\nconst flowFromIntent = {\n  buy: 'buy',\n  exchange: 'exchange',\n  store_info: 'info',\n  support: 'support',\n  none: null,\n};\nconst currentIntent = {\n  buy: 'buy',\n  exchange: 'exchange',\n  info: 'store_info',\n  support: 'support',\n}[currentFlow] ?? 'none';\n\nconst flow = flowFromIntent[understanding_output.business_intent ?? 'none'] ?? flowFromIntent[currentIntent] ?? null;\nconst topic = understanding_output.topic === 'none' ? null : (understanding_output.topic ?? currentTopic ?? null);\nconst hasActiveContext = Boolean(\n  currentFlow\n  || currentTopic\n  || shownProducts.length > 0\n  || currentInterest\n  || Object.values(existingConstraints).some((value) => value !== null)\n  || (Array.isArray(session.conversation_history) && session.conversation_history.length > 0)\n);\n\nconst productContext = {\n  brand: mergedConstraints.brand,\n  model: mergedConstraints.model,\n  storage: mergedConstraints.storage,\n  condition: mergedConstraints.condition,\n  budget_etb: mergedConstraints.budget_etb,\n  current_interest: currentInterest ? currentInterest.raw : null,\n  context_relation: understanding_output.context_relation ?? 'unclear',\n};\nconst hasProductContext = Boolean(\n  resolvedProduct\n  || reference_resolution.resolved\n  || productContext.brand\n  || productContext.model\n  || currentInterest\n  || shownProducts.length > 0\n);\n\nconst missing_fields = [];\nif (flow === 'buy' && ['product_search', 'pricing', 'stock_check', 'general', null].includes(topic) && !hasProductContext) {\n  missing_fields.push('model');\n}\nif (flow === 'exchange' && !productContext.condition && !currentInterest && !shownProducts.length) {\n  missing_fields.push('condition');\n}\nconst last_asked_key = missing_fields[0] ?? null;\n\nlet rules_output = {\n  reply_mode: 'off_topic_redirect',\n  should_call_resolver: false,\n  resolver_input: {\n    flow: flow ?? currentFlow ?? null,\n    product_context: productContext,\n    missing_fields,\n    resolved_reference: resolvedProduct ? { id: resolvedProduct.id, raw: resolvedProduct.raw } : null,\n    resolved_product_name: reference_resolution.resolved_product_name ?? ([productContext.brand, productContext.model].filter(Boolean).join(' ').trim() || null),\n  },\n  session_update: {\n    last_topic: topic,\n    flow_stage: flow ?? currentFlow ?? null,\n    ambiguous_reference: reference_resolution.reference_type !== 'none' ? reference_resolution.reference_type : null,\n    resolved_ambiguity: Boolean(reference_resolution.resolved),\n    collected_constraints: mergedConstraints,\n    last_asked_key,\n  },\n  confidence: typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0,\n  reasoning: 'default_off_topic_redirect',\n};\n\nconst messageFunction = understanding_output.message_function ?? 'off_topic';\nconst contextRelation = understanding_output.context_relation ?? 'unclear';\nconst confidence = typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0;\n\nif (event.event_type === 'start_reset') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'small_talk_redirect',\n    should_call_resolver: false,\n    session_update: {\n      ...rules_output.session_update,\n      last_topic: null,\n      flow_stage: null,\n      ambiguous_reference: null,\n      resolved_ambiguity: false,\n      last_asked_key: null,\n    },\n    reasoning: 'start_reset_welcome',\n  };\n} else if (event.event_type === 'deep_link_start') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'business_resolve',\n    should_call_resolver: true,\n    resolver_input: {\n      ...rules_output.resolver_input,\n      flow: 'buy',\n      missing_fields: [],\n    },\n    session_update: {\n      ...rules_output.session_update,\n      last_topic: 'product_search',\n      flow_stage: 'buy',\n      last_asked_key: null,\n    },\n    reasoning: 'deep_link_start_business_entry',\n  };\n} else if (!Number.isFinite(confidence) || confidence < 0.6) {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'handoff_admin',\n    should_call_resolver: false,\n    reasoning: 'low_understanding_confidence',\n  };\n} else if (messageFunction === 'acknowledgment') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'acknowledge_and_close',\n    should_call_resolver: false,\n    reasoning: 'acknowledgment_detected',\n  };\n} else if (messageFunction === 'off_topic') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'off_topic_redirect',\n    should_call_resolver: false,\n    reasoning: 'off_topic_detected',\n  };\n} else if (messageFunction === 'ambiguous_reference') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: reference_resolution.resolved ? 'business_resolve' : 'clarify_reference',\n    should_call_resolver: Boolean(reference_resolution.resolved),\n    reasoning: reference_resolution.resolved ? 'ambiguous_reference_resolved_from_session' : 'ambiguous_reference_needs_clarification',\n  };\n} else if (messageFunction === 'info_request') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'business_resolve',\n    should_call_resolver: true,\n    resolver_input: {\n      ...rules_output.resolver_input,\n      flow: 'info',\n      missing_fields: [],\n    },\n    session_update: {\n      ...rules_output.session_update,\n      flow_stage: 'info',\n      last_asked_key: null,\n    },\n    reasoning: 'store_info_request',\n  };\n} else if (messageFunction === 'negotiation') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: hasProductContext || hasActiveContext ? (currentFlow === 'buy' ? 'resume_previous_flow' : 'business_resolve') : 'clarify_reference',\n    should_call_resolver: Boolean(hasProductContext || hasActiveContext),\n    reasoning: hasProductContext || hasActiveContext ? 'negotiation_uses_existing_context' : 'negotiation_needs_product_context',\n  };\n} else if (messageFunction === 'refinement') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: currentFlow && (contextRelation === 'refines_known_constraints' || understanding_output.should_reuse_existing_context) ? 'resume_previous_flow' : 'business_resolve',\n    should_call_resolver: true,\n    reasoning: 'refinement_updates_known_constraints',\n  };\n} else if (messageFunction === 'follow_up') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: reference_resolution.reference_type !== 'none' && !reference_resolution.resolved ? 'clarify_reference' : (hasActiveContext ? 'resume_previous_flow' : 'business_resolve'),\n    should_call_resolver: reference_resolution.reference_type !== 'none' && !reference_resolution.resolved ? false : true,\n    reasoning: hasActiveContext ? 'follow_up_continues_context' : 'follow_up_without_context',\n  };\n} else if (messageFunction === 'fresh_request') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: understanding_output.business_intent === 'none' ? 'off_topic_redirect' : 'business_resolve',\n    should_call_resolver: understanding_output.business_intent !== 'none',\n    reasoning: understanding_output.business_intent === 'none' ? 'fresh_non_business_message' : 'fresh_business_request',\n  };\n}\n\nreturn [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];"
+      },
+      "id": "rules-layer",
+      "name": "Rules Layer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst rules_output = input.rules_output && typeof input.rules_output === 'object' ? input.rules_output : {};\nconst resolverInput = rules_output.resolver_input && typeof rules_output.resolver_input === 'object' ? rules_output.resolver_input : {};\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return { id: String(value), brand: null, model: null, price_etb: null, storage: null, condition: null, stock_status: null, raw: value };\n  }\n  if (!isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.name ?? value.title),\n    price_etb: normalizeNullableNumber(priceValue),\n    storage: normalizeText(value.storage),\n    condition: normalizeText(value.condition),\n    stock_status: normalizeText(value.stock_status),\n    raw: value,\n  };\n};\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 10);\nconst sessionConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst sessionConstraints = {\n  budget_etb: normalizeNullableNumber(sessionConstraintsSource.budget_etb),\n  brand: normalizeText(sessionConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(sessionConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeText(sessionConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(sessionConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\nconst productContextSource = isRecord(resolverInput.product_context) ? resolverInput.product_context : {};\nconst effectiveConstraints = {\n  budget_etb: normalizeNullableNumber(productContextSource.budget_etb) ?? sessionConstraints.budget_etb,\n  brand: normalizeText(productContextSource.brand) ?? sessionConstraints.brand,\n  model: normalizeText(productContextSource.model) ?? sessionConstraints.model,\n  storage: normalizeText(productContextSource.storage) ?? sessionConstraints.storage,\n  condition: normalizeText(productContextSource.condition) ?? sessionConstraints.condition,\n};\n\nconst requestedName = normalizeText(resolverInput.resolved_product_name)\n  ?? ([effectiveConstraints.brand, effectiveConstraints.model].filter(Boolean).join(' ').trim() || null);\nlet selectedProduct = null;\nif (resolverInput.resolved_reference?.id) {\n  selectedProduct = shownProducts.find((product) => product.id === resolverInput.resolved_reference.id) ?? null;\n}\nif (!selectedProduct && requestedName) {\n  const lowered = requestedName.toLowerCase();\n  selectedProduct = shownProducts.find((product) => {\n    const name = [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\n    return Boolean(name) && name === lowered;\n  }) ?? null;\n}\nif (!selectedProduct && currentInterest) {\n  const sameModel = effectiveConstraints.model && currentInterest.model && currentInterest.model.toLowerCase() === effectiveConstraints.model.toLowerCase();\n  const sameBrand = effectiveConstraints.brand && currentInterest.brand && currentInterest.brand.toLowerCase() === effectiveConstraints.brand.toLowerCase();\n  if (!effectiveConstraints.model || sameModel || sameBrand) {\n    selectedProduct = currentInterest;\n  }\n}\n\nconst matchesConstraints = (product) => {\n  if (!product) return false;\n  if (effectiveConstraints.brand && (!product.brand || !product.brand.toLowerCase().includes(effectiveConstraints.brand.toLowerCase()))) return false;\n  if (effectiveConstraints.model) {\n    const name = [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\n    if (!name.includes(effectiveConstraints.model.toLowerCase())) return false;\n  }\n  if (effectiveConstraints.storage && (!product.storage || product.storage.toLowerCase() !== effectiveConstraints.storage.toLowerCase())) return false;\n  if (effectiveConstraints.condition && (!product.condition || product.condition.toLowerCase() !== effectiveConstraints.condition.toLowerCase())) return false;\n  return true;\n};\n\nconst filteredProducts = shownProducts.filter(matchesConstraints);\nconst products = selectedProduct\n  ? [selectedProduct]\n  : (filteredProducts.length > 0 ? filteredProducts.slice(0, 3) : shownProducts.slice(0, 3));\nconst numericPrices = products.map((product) => product.price_etb).filter((value) => Number.isFinite(value));\nconst priceRange = numericPrices.length > 0 ? { min: Math.min(...numericPrices), max: Math.max(...numericPrices) } : null;\nlet result_type = 'no_match';\nlet next_step = 'ask_clarification';\nlet exchange_context = null;\n\nif (rules_output.reply_mode === 'clarify_reference') {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n} else if (resolverInput.flow === 'exchange') {\n  result_type = 'exchange_offer';\n  next_step = 'ask_clarification';\n  exchange_context = {\n    current_interest: session.flow_context?.buy_flow?.current_interest ?? null,\n    collected_constraints: effectiveConstraints,\n  };\n} else if (resolverInput.flow === 'info' || resolverInput.flow === 'support') {\n  result_type = 'no_match';\n  next_step = 'ask_clarification';\n} else if (selectedProduct) {\n  result_type = 'single_product';\n  next_step = 'show_single';\n} else if (filteredProducts.length > 1) {\n  result_type = 'multiple_options';\n  next_step = 'show_options';\n} else if ((resolverInput.missing_fields ?? []).length > 0) {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n}\n\nconst resolver_output = {\n  result_type,\n  products,\n  exchange_context,\n  next_step,\n  facts_for_reply: {\n    product_found: Boolean(selectedProduct || products.length > 0),\n    how_many_options: products.length,\n    stock_status: selectedProduct?.stock_status ?? null,\n    price_range: priceRange,\n  },\n};\n\nreturn [{ json: { event, session, client_config, understanding_output, rules_output, resolver_output } }];"
+      },
+      "id": "business-data-resolver",
+      "name": "Business Data Resolver",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0.15,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 2 Reply AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object with exactly this shape: {\\\"reply_text\\\":\\\"string\\\"}.\\\\nDo not add any other keys. Do not explain anything. Do not add markdown fences.\\\\nUse only the provided customer_text, understanding_output, rules_output, resolver_output, reply_context, last_messages, and client_config.\\\\nNever invent stock, price, warranty, availability, delivery, location, or shop facts.\\\\nKeep the reply to max 3 short lines.\\\\nDefault to natural Amharic in Ethiopic script for conversation.\\\\nUse English only for brand, model, storage, and product names where natural.\\\\nDo not produce awkward English-Amharic transliteration.\\\\nDo not use vague words like technology, electronics, gadgets, or accessories unless the customer explicitly asks for them.\\\\nPrefer wording around phone, mobile, model, exchange, shop, price, and availability.\\\\nOne emoji max, and only when the tone is playful.\\\\nStrict continuity rules:\\\\n- If reply_context.should_greet is false, never greet, never welcome, and never reopen with a seller introduction.\\\\n- Only greet on explicit restart or the first meaningful turn of a new conversation.\\\\n- If reply_context.has_active_context is true, continue that context instead of asking a generic buying-or-exchange question.\\\\n- If the user message is clear, respond to that exact message and do not replace it with a generic opening.\\\\n- If current_flow or current_topic exists, use it to continue the thread.\\\\nStrict reply mode rules:\\\\n- acknowledge_and_close: short close only, no question, no greeting.\\\\n- off_topic_redirect: short redirect only, one gentle question max, no greeting.\\\\n- small_talk_redirect: short natural acknowledgment plus one phone-related next step, no repeated welcome.\\\\n- clarify_reference: ask which one the customer means, no product facts, no generic reopening.\\\\n- resume_previous_flow: continue the previous thread directly, no restart behavior.\\\\n- business_resolve: use resolver facts only. If resolver facts are weak, ask one narrow follow-up tied to the actual customer text or current context.\\\\n- handoff_admin: brief reassurance only, no question, no greeting.\\\\nNarrow clarification rules:\\\\n- Do not ask buying-or-exchange unless intent is truly unclear and there is no useful session context.\\\\n- If the customer asked about price, ask a narrow follow-up about the model or brand if needed.\\\\n- If the customer asked available?, use the current item or current flow if present; do not reopen from zero.\\\\n- If the customer said that one or cheaper one, stay in reference clarification or prior-context continuation; do not reopen with a catalog greeting.\\\\nStyle rules:\\\\n- Sound like a practical Ethiopian phone seller on Telegram.\\\\n- Be short, direct, natural, and sales-aware.\\\\n- No robotic assistant phrasing.\\\\n- No broad onboarding copy unless this is truly a new conversation.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        understanding_output: $json.understanding_output ?? null,\n        rules_output: $json.rules_output ?? null,\n        resolver_output: $json.resolver_output ?? null,\n        reply_context: {\n          event_type: $json.event?.event_type ?? null,\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          message_count: Number($json.session?.message_count ?? 0),\n          history_count: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.length : 0,\n          has_active_context: Boolean(\n            ($json.session?.conversation_state?.current_flow ?? null)\n            || ($json.session?.conversation_state?.current_topic ?? null)\n            || (Array.isArray($json.session?.conversation_history) && $json.session.conversation_history.length > 0)\n            || (Array.isArray($json.session?.flow_context?.buy_flow?.shown_products) && $json.session.flow_context.buy_flow.shown_products.length > 0)\n            || $json.session?.flow_context?.buy_flow?.current_interest\n          ),\n          should_greet: Boolean(\n            ($json.event?.event_type === 'start_reset')\n            || (\n              Number($json.session?.message_count ?? 0) === 0\n              && (!Array.isArray($json.session?.conversation_history) || $json.session.conversation_history.length === 0)\n              && !$json.session?.conversation_state?.current_flow\n              && !$json.session?.conversation_state?.current_topic\n            )\n          ),\n        },\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-3) : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+        "options": {}
+      },
+      "id": "reply-ai",
+      "name": "Reply AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let base = {};\ntry {\n  base = $item(0).$node['Business Data Resolver'].json ?? {};\n} catch {\n  base = {};\n}\nif (!base.rules_output) {\n  try {\n    base = $item(0).$node['Rules Layer'].json ?? base;\n  } catch {}\n}\nconst replyPayload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst understanding_output = base.understanding_output && typeof base.understanding_output === 'object' ? base.understanding_output : {};\nconst rules_output = base.rules_output && typeof base.rules_output === 'object' ? base.rules_output : {};\nconst resolver_output = base.resolver_output && typeof base.resolver_output === 'object' ? base.resolver_output : null;\nconst issues = [];\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (isRecord(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return isRecord(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\n\nconst parsedReply = parseJsonObject(replyPayload.choices?.[0]?.message?.content)\n  || parseJsonObject(replyPayload.output_text)\n  || parseJsonObject(replyPayload.text)\n  || parseJsonObject(replyPayload.data)\n  || parseJsonObject(replyPayload.result)\n  || parseJsonObject(replyPayload);\n\nconst reply_text = typeof parsedReply?.reply_text === 'string' ? parsedReply.reply_text.trim() : '';\nif (!reply_text) issues.push('missing_reply_text');\nconst lineCount = reply_text ? reply_text.split(/\\r?\\n/).filter((line) => line.trim()).length : 0;\nif (lineCount > 3) issues.push('reply_exceeds_max_lines');\nif (rules_output.reply_mode === 'acknowledge_and_close' && /[?]/.test(reply_text)) issues.push('acknowledge_and_close_should_not_ask_question');\nif (rules_output.reply_mode === 'handoff_admin' && /[?]/.test(reply_text)) issues.push('handoff_admin_should_not_ask_question');\nif (rules_output.should_call_resolver && !resolver_output) issues.push('resolver_expected_but_missing');\nif (!rules_output.should_call_resolver && rules_output.reply_mode === 'business_resolve') issues.push('business_resolve_requires_resolver');\nif (rules_output.reply_mode === 'business_resolve' && resolver_output && !['single_product', 'multiple_options', 'no_match', 'out_of_stock', 'clarification_needed', 'exchange_offer'].includes(resolver_output.result_type)) issues.push('invalid_resolver_result_type');\nif (!['business_resolve', 'off_topic_redirect', 'small_talk_redirect', 'clarify_reference', 'resume_previous_flow', 'acknowledge_and_close', 'handoff_admin'].includes(rules_output.reply_mode)) issues.push('invalid_reply_mode_contract');\n\nconst valid = issues.length === 0;\nconst safe_to_send = valid && Boolean(reply_text);\nconst now = Date.now();\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst nextHistory = history\n  .concat([{ role: 'user', text: String(event.text ?? ''), timestamp: Number.isFinite(Number(event.timestamp)) ? Number(event.timestamp) : now }])\n  .concat(safe_to_send ? [{ role: 'assistant', text: reply_text, timestamp: now }] : [])\n  .slice(-12);\n\nconst shownProducts = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length > 0\n  ? resolver_output.products\n  : (Array.isArray(session.flow_context?.buy_flow?.shown_products) ? session.flow_context.buy_flow.shown_products : []);\nconst currentInterest = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length === 1\n  ? resolver_output.products[0]\n  : (rules_output.resolver_input?.resolved_reference?.raw ?? session.flow_context?.buy_flow?.current_interest ?? null);\nconst flow = rules_output.resolver_input?.flow ?? session.conversation_state?.current_flow ?? null;\nconst sessionConstraintSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst updateConstraintSource = isRecord(rules_output.session_update?.collected_constraints) ? rules_output.session_update.collected_constraints : {};\nconst mergedConstraints = {\n  budget_etb: normalizeNullableNumber(updateConstraintSource.budget_etb) ?? normalizeNullableNumber(sessionConstraintSource.budget_etb),\n  brand: normalizeText(updateConstraintSource.brand) ?? normalizeText(sessionConstraintSource.brand),\n  model: normalizeText(updateConstraintSource.model) ?? normalizeText(sessionConstraintSource.model),\n  storage: normalizeText(updateConstraintSource.storage) ?? normalizeText(sessionConstraintSource.storage),\n  condition: normalizeText(updateConstraintSource.condition) ?? normalizeText(sessionConstraintSource.condition),\n};\nconst updatedSession = {\n  session_id: String(session.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(session.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(session.created_at)) ? Number(session.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, Number(session.message_count ?? 0)) + 1,\n  conversation_state: {\n    current_topic: rules_output.session_update?.last_topic ?? session.conversation_state?.current_topic ?? null,\n    current_flow: flow,\n    is_active: rules_output.reply_mode !== 'acknowledge_and_close',\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  collected_constraints: mergedConstraints,\n  last_asked_key: rules_output.session_update?.last_asked_key ?? session.last_asked_key ?? null,\n  conversation_history: nextHistory,\n  admin_escalation: rules_output.reply_mode === 'handoff_admin'\n    ? { required: true, reason: rules_output.reasoning ?? 'handoff_admin', status: 'pending' }\n    : (session.admin_escalation && typeof session.admin_escalation === 'object' ? session.admin_escalation : { required: false, reason: null, status: null }),\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    rules_output,\n    resolver_output,\n    reply_text,\n    valid,\n    issues,\n    safe_to_send,\n    telegram_payload: { chat_id: event.chatId ?? null, text: reply_text },\n    session_update_payload: { userId: event.userId ?? null, chatId: event.chatId ?? null, session: updatedSession },\n    validation_meta: { parsed_reply: parsedReply, timestamp: now },\n  },\n}];"
+      },
+      "id": "side-effects",
+      "name": "Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.event.chatId }}",
+        "action": "typing"
+      },
+      "id": "telegram-typing",
+      "name": "Telegram Typing",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        800,
+        180
+      ],
+      "webhookId": "f579adb2-7dcb-47b7-b27c-f389acbafc17"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $item(0).$node['Validation'].json.telegram_payload.chat_id }}",
+        "text": "={{ $item(0).$node['Validation'].json.reply_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "telegram-send",
+      "name": "Telegram Send",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "lFnI6XXhGbOZJr8X",
+          "name": "Telegram account"
+        }
+      },
+      "position": [
+        3200,
+        300
+      ],
+      "webhookId": "e738a3c0-ae1e-41ef-8b15-0cb4ee2e1608"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($item(0).$node['Validation'].json.session_update_payload) }}",
+        "options": {}
+      },
+      "id": "session-save",
+      "name": "Session Save",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9fbfb8f2-af27-4229-a0dd-78a7248d5fcc",
+              "leftValue": "={{ $json.rules_output.should_call_resolver }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "6cf3b3b0-ecc7-4b84-8cf2-885d6188a469",
+      "name": "Should Resolve",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2b7c4a7e-5945-4c2a-a27a-cff69a7ca7a4",
+              "leftValue": "={{ $json.safe_to_send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "de4bc6fc-cd00-4ba0-b3c9-d5ecb82c5309",
+      "name": "Safe To Send",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2960,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Input": {
+      "main": [
+        [
+          {
+            "node": "Event Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Session Load",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Typing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Load": {
+      "main": [
+        [
+          {
+            "node": "Session Bootstrap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Bootstrap": {
+      "main": [
+        [
+          {
+            "node": "Understanding AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Understanding AI": {
+      "main": [
+        [
+          {
+            "node": "Understanding JSON Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Understanding JSON Guard": {
+      "main": [
+        [
+          {
+            "node": "Rules Layer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rules Layer": {
+      "main": [
+        [
+          {
+            "node": "Should Resolve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Resolve": {
+      "main": [
+        [
+          {
+            "node": "Business Data Resolver",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Data Resolver": {
+      "main": [
+        [
+          {
+            "node": "Reply AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply AI": {
+      "main": [
+        [
+          {
+            "node": "Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation": {
+      "main": [
+        [
+          {
+            "node": "Safe To Send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Safe To Send": {
+      "main": [
+        [
+          {
+            "node": "Telegram Send",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Session Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Send": {
+      "main": [
+        [
+          {
+            "node": "Session Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "dd162ccb-61a7-458a-b785-17673f8f0ed6",
+  "activeVersionId": "dd162ccb-61a7-458a-b785-17673f8f0ed6",
+  "versionCounter": 47,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-02T17:36:18.951Z",
+      "createdAt": "2026-04-02T17:36:18.951Z",
+      "role": "workflow:owner",
+      "workflowId": "hc55q2zfas7gG1yu",
+      "projectId": "Fk6QzHiE8AwQnJYG",
+      "project": {
+        "updatedAt": "2026-04-02T17:28:20.518Z",
+        "createdAt": "2026-04-02T17:25:40.291Z",
+        "id": "Fk6QzHiE8AwQnJYG",
+        "name": "Abenezer Tadiyos  <babig7633@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-04-02T22:11:35.919Z",
+    "createdAt": "2026-04-02T22:11:35.919Z",
+    "versionId": "dd162ccb-61a7-458a-b785-17673f8f0ed6",
+    "workflowId": "hc55q2zfas7gG1yu",
+    "nodes": [
+      {
+        "parameters": {
+          "updates": [
+            "message",
+            "callback_query"
+          ],
+          "additionalFields": {}
+        },
+        "id": "telegram-input",
+        "name": "Telegram Input",
+        "type": "n8n-nodes-base.telegramTrigger",
+        "typeVersion": 1,
+        "webhookId": "7aec4327-c483-4b7e-b3fe-0ced6466cd3e",
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          320,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+        },
+        "id": "event-normalizer",
+        "name": "Event Normalizer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-load'}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "{\n  \"userId\": \"={{ $json.event.userId }}\",\n  \"chatId\": \"={{ $json.event.chatId }}\"\n}",
+          "options": {}
+        },
+        "id": "session-load",
+        "name": "Session Load",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          800,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const payload = $json ?? {};\nlet event = payload.event ?? null;\nif (!event) {\n  try {\n    event = $item(0).$node['Event Normalizer'].json.event;\n  } catch {\n    event = null;\n  }\n}\n\nevent = event && typeof event === 'object' ? event : {};\nconst remoteEnvelope = payload.session && typeof payload.session === 'object'\n  ? payload.session\n  : (payload.data?.session && typeof payload.data.session === 'object' ? payload.data.session : null);\nconst remoteData = remoteEnvelope && Object.prototype.hasOwnProperty.call(remoteEnvelope, 'data')\n  ? remoteEnvelope.data\n  : (payload.session?.data ?? payload.data?.session?.data ?? remoteEnvelope);\nconst existing = remoteData && typeof remoteData === 'object' ? remoteData : {};\nconst now = Date.now();\nconst history = Array.isArray(existing.conversation_history)\n  ? existing.conversation_history\n  : (Array.isArray(existing.message_history) ? existing.message_history : []);\nconst shownProducts = Array.isArray(existing.flow_context?.buy_flow?.shown_products)\n  ? existing.flow_context.buy_flow.shown_products\n  : (Array.isArray(existing.shown_options) ? existing.shown_options : []);\nconst currentInterest = existing.flow_context?.buy_flow?.current_interest\n  ?? existing.active_product_id\n  ?? existing.selected_option\n  ?? null;\nconst currentTopic = existing.conversation_state?.current_topic ?? existing.last_topic ?? null;\nconst currentFlow = existing.conversation_state?.current_flow ?? existing.resolved_flow ?? null;\nconst active = existing.conversation_state?.is_active;\nconst baseCount = Number.isFinite(Number(existing.message_count))\n  ? Number(existing.message_count)\n  : history.filter((item) => item && typeof item === 'object').length;\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeBudget = (value) => {\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst currentInterestRecord = currentInterest && typeof currentInterest === 'object' ? currentInterest : {};\nconst existingConstraints = existing.collected_constraints && typeof existing.collected_constraints === 'object'\n  ? existing.collected_constraints\n  : {};\nconst collected_constraints = {\n  budget_etb: normalizeBudget(existingConstraints.budget_etb ?? existing.budget_etb ?? null),\n  brand: normalizeText(existingConstraints.brand ?? currentInterestRecord.brand ?? null),\n  model: normalizeText(existingConstraints.model ?? currentInterestRecord.model ?? currentInterestRecord.name ?? null),\n  storage: normalizeText(existingConstraints.storage ?? currentInterestRecord.storage ?? null),\n  condition: normalizeText(existingConstraints.condition ?? currentInterestRecord.condition ?? null),\n};\nconst session = {\n  session_id: String(existing.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(existing.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(existing.created_at)) ? Number(existing.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, baseCount),\n  conversation_state: {\n    current_topic: currentTopic,\n    current_flow: currentFlow,\n    is_active: typeof active === 'boolean' ? active : true,\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  collected_constraints,\n  last_asked_key: normalizeText(existing.last_asked_key ?? existing.last_asked_field ?? null),\n  conversation_history: history.slice(-12).filter((item) => item && typeof item === 'object'),\n  admin_escalation: existing.admin_escalation && typeof existing.admin_escalation === 'object'\n    ? {\n        required: Boolean(existing.admin_escalation.required),\n        reason: existing.admin_escalation.reason ?? null,\n        status: existing.admin_escalation.status ?? null,\n      }\n    : {\n        required: false,\n        reason: null,\n        status: null,\n      },\n};\nconst client_config = {\n  \"store_name\": \"TedyTech\",\n  \"default_language\": \"am\",\n  \"supports_exchange\": true,\n  \"supports_finance\": false,\n  \"telegram_bot_name\": \"TedyTech Bot\"\n};\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    session_source: remoteEnvelope?.exists ? 'remote' : 'bootstrap',\n  },\n}];"
+        },
+        "id": "session-bootstrap",
+        "name": "Session Bootstrap",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1040,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 1 Understanding AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object. No markdown. No explanation. No extra text.\\\\nDo not generate reply text. Do not choose workflow actions. Do not ask questions.\\\\nInterpret the message by conversational function first, using session context before surface wording.\\\\nUse current topic, current flow, shown products, current interest, stored constraints, and recent conversation history actively.\\\\nPrefer honest ambiguity over wrong forced classification.\\\\nReuse known constraints when the customer is refining or following up.\\\\nDistinguish fresh requests, refinements, follow-ups, negotiation, store-info, acknowledgment, off-topic, and ambiguous references.\\\\nNegotiation is separate from generic product discovery.\\\\nStore-info is separate from product search.\\\\nIf the customer references previous options and session context is enough, resolve the reference.\\\\nIf the reference cannot be resolved confidently, mark it as ambiguous.\\\\nDo not output old fields such as user_need, next_action, tentative_flow, ambiguity, evidence_accumulated, or extracted_need.\\\\nUse exactly this schema:\\\\n{\\\"message_function\\\":\\\"fresh_request | refinement | follow_up | negotiation | info_request | acknowledgment | off_topic | ambiguous_reference\\\",\\\"business_intent\\\":\\\"buy | exchange | store_info | support | none\\\",\\\"topic\\\":\\\"product_search | pricing | stock_check | exchange | store_info | support | general | none\\\",\\\"context_relation\\\":\\\"new_topic | continues_current_topic | refines_known_constraints | references_previous_options | unclear\\\",\\\"reference_resolution\\\":{\\\"reference_type\\\":\\\"none | last_option | cheaper_option | first_option | last_option_explicit | specific_product | unclear\\\",\\\"resolved\\\":false,\\\"resolved_product_id\\\":null,\\\"resolved_product_name\\\":null},\\\"constraints_update\\\":{\\\"budget_etb\\\":null,\\\"brand\\\":null,\\\"model\\\":null,\\\"storage\\\":null,\\\"condition\\\":null},\\\"known_constraints_used\\\":{\\\"budget_etb\\\":null,\\\"brand\\\":null,\\\"model\\\":null},\\\"should_reuse_existing_context\\\":true,\\\"confidence\\\":0.0,\\\"ambiguity_reason\\\":null,\\\"reasoning\\\":\\\"string\\\"}\\\\nReasoning boundaries:\\\\n- Simple greeting/social opener with no business ask should usually be off_topic, not a fresh buy request.\\\\n- A short reply like thanks/ok that closes the previous answer should be acknowledgment, not a new request.\\\\n- If a customer already has context and adds budget/model/storage/condition, that is refinement.\\\\n- If the customer says available?, that one, or the cheaper one after prior context, interpret it relative to that context first.\\\\n- If a customer asks for lower price or a cheaper deal on an active item, classify it as negotiation.\\\\n- If the customer asks where the shop is or similar business information, classify it as info_request with store_info intent.\\\\n- If the session already contains useful constraints, indicate that they should be reused.\\\\nConfidence must be between 0 and 1.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        event: {\n          event_type: $json.event?.event_type ?? null,\n          deep_link: $json.event?.deep_link ?? null,\n        },\n        session_context: {\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          collected_constraints: $json.session?.collected_constraints ?? {\n            budget_etb: null,\n            brand: null,\n            model: null,\n            storage: null,\n            condition: null,\n          },\n          last_asked_key: $json.session?.last_asked_key ?? null,\n          current_interest: $json.session?.flow_context?.buy_flow?.current_interest ?? null,\n          shown_products: Array.isArray($json.session?.flow_context?.buy_flow?.shown_products)\n            ? $json.session.flow_context.buy_flow.shown_products.slice(0, 5)\n            : [],\n        },\n        last_messages: Array.isArray($json.session?.conversation_history)\n          ? $json.session.conversation_history.slice(-6)\n          : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+          "options": {}
+        },
+        "id": "understanding-ai",
+        "name": "Understanding AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1280,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const base = (() => {\n  try {\n    return $item(0).$node['Session Bootstrap'].json ?? {};\n  } catch {\n    return {};\n  }\n})();\nconst payload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst issues = [];\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (isRecord(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return isRecord(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst clamp = (value, min, max) => Math.min(max, Math.max(min, value));\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeEnum = (value, allowed, synonyms, label) => {\n  if (value === null && allowed.includes(null)) return null;\n  if (typeof value === 'string') {\n    const normalized = synonyms[value.trim().toLowerCase()] ?? value.trim().toLowerCase();\n    if (allowed.includes(normalized)) return normalized;\n    issues.push(label + '_invalid:' + value);\n  }\n  return undefined;\n};\n\nconst rawResponse = parseJsonObject(payload.choices?.[0]?.message?.content)\n  || parseJsonObject(payload.output_text)\n  || parseJsonObject(payload.text)\n  || parseJsonObject(payload.data)\n  || parseJsonObject(payload.result)\n  || parseJsonObject(payload);\nif (!rawResponse) {\n  issues.push('understanding_response_not_parseable');\n}\n\nconst text = String(event.text ?? '').trim();\nconst lower = text.toLowerCase();\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst shownProductsRaw = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products\n  : [];\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return {\n      id: String(value),\n      brand: null,\n      model: null,\n      storage: null,\n      condition: null,\n      price_etb: null,\n      name: String(value),\n      raw: value,\n      index,\n    };\n  }\n  if (!isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.name ?? value.title),\n    storage: normalizeText(value.storage),\n    condition: normalizeText(value.condition),\n    price_etb: normalizeNullableNumber(priceValue),\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || normalizeText(value.name ?? value.title),\n    raw: value,\n    index,\n  };\n};\nconst shownProducts = shownProductsRaw.map(normalizeProduct).filter(Boolean);\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);\nconst currentFlow = session.conversation_state?.current_flow ?? null;\nconst currentTopic = session.conversation_state?.current_topic ?? null;\n\nconst existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst sessionConstraints = {\n  budget_etb: normalizeNullableNumber(existingConstraintsSource.budget_etb),\n  brand: normalizeText(existingConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(existingConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeText(existingConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(existingConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\n\nconst hasActiveContext = Boolean(\n  currentFlow\n  || currentTopic\n  || shownProducts.length > 0\n  || currentInterest\n  || history.length > 0\n  || Object.values(sessionConstraints).some((value) => value !== null)\n);\n\nconst currencyMatches = [...text.matchAll(/(?:\\b\\d{3,6}\\s*(?:birr|etb)\\b)|(?:\\b\\d+(?:\\.\\d+)?\\s*k\\b)|(?:\\$\\s*\\d+(?:\\.\\d+)?)/gi)];\nconst parseBudget = () => {\n  for (const match of currencyMatches) {\n    const raw = match[0].trim().toLowerCase();\n    if (raw.includes('$')) continue;\n    if (raw.endsWith('k')) {\n      const numeric = Number(raw.replace(/k$/i, ''));\n      if (Number.isFinite(numeric)) return numeric * 1000;\n    }\n    const digits = raw.replace(/[^\\d.]/g, '');\n    const numeric = Number(digits);\n    if (Number.isFinite(numeric)) return numeric;\n  }\n  return null;\n};\n\nconst brandPattern = /\\b(iphone|samsung|tecno|infinix|redmi|xiaomi|pixel|oppo|vivo|realme|itel|nokia)\\b/i;\nconst brandMatch = text.match(brandPattern);\nconst modelPattern = /\\b(iphone\\s*\\d+(?:\\s*(?:pro|max|plus|mini))?|samsung\\s*[a-z0-9+ ]+|tecno\\s*[a-z0-9+ ]+|infinix\\s*[a-z0-9+ ]+|redmi\\s*[a-z0-9+ ]+|xiaomi\\s*[a-z0-9+ ]+|pixel\\s*[a-z0-9+ ]+|oppo\\s*[a-z0-9+ ]+|vivo\\s*[a-z0-9+ ]+|realme\\s*[a-z0-9+ ]+|itel\\s*[a-z0-9+ ]+|nokia\\s*[a-z0-9+ ]+)\\b/gi;\nconst modelMatches = [...text.matchAll(modelPattern)].map((match) => match[1].trim()).filter(Boolean);\nconst storageMatch = text.match(/\\b(64|128|256|512|1024)\\s*gb\\b/i);\nconst conditionMatch = text.match(/\\b(new|used|sealed|refurbished|clean)\\b/i);\n\nconst pricingCue = /\\b(price|how much|cost|budget|last price)\\b/i.test(lower);\nconst stockCue = /\\b(available|availability|stock|in stock)\\b/i.test(lower);\nconst exchangeCue = /\\b(exchange|swap|trade\\s?in|trade)\\b/i.test(lower);\nconst storeInfoCue = /\\b(where|location|address|shop|store|branch|area|hours|open|close|delivery|payment|warranty)\\b/i.test(lower);\nconst supportCue = /\\b(problem|issue|support|help|complaint|broken|damaged)\\b/i.test(lower);\nconst negotiationCue = /\\b(cheaper|discount|lower|reduce|best price|nego)\\b/i.test(lower);\nconst acknowledgmentCue = /^(ok(ay)?|thanks|thank you|got it|noted|alright|sure)\\b/i.test(lower) && text.split(/\\s+/).filter(Boolean).length <= 4;\nconst offTopicCue = /\\b(weather|football|soccer|movie|music|joke|sleep|news|time)\\b/i.test(lower);\n\nconst referenceDefinitions = [\n  { type: 'cheaper_option', test: (value) => /\\b(cheaper|cheapest)\\b/i.test(value) },\n  { type: 'first_option', test: (value) => /\\bfirst one\\b/i.test(value) },\n  { type: 'last_option_explicit', test: (value) => /\\blast one\\b/i.test(value) },\n  { type: 'last_option', test: (value) => /\\b(that one|the one|this one|same one)\\b/i.test(value) },\n];\nconst referenceHint = referenceDefinitions.find((item) => item.test(text));\n\nconst resolveReferenceCandidate = (referenceType) => {\n  const byCheapest = [...shownProducts]\n    .filter((item) => Number.isFinite(item.price_etb))\n    .sort((a, b) => a.price_etb - b.price_etb)[0] ?? null;\n  const byFirst = shownProducts[0] ?? null;\n  const byLast = shownProducts[shownProducts.length - 1] ?? currentInterest ?? null;\n  if (referenceType === 'cheaper_option') return byCheapest;\n  if (referenceType === 'first_option') return byFirst;\n  if (referenceType === 'last_option' || referenceType === 'last_option_explicit') return byLast;\n  return null;\n};\n\nconst rawReference = isRecord(rawResponse?.reference_resolution) ? rawResponse.reference_resolution : {};\nlet reference_type = normalizeEnum(rawReference.reference_type, ['none', 'last_option', 'cheaper_option', 'first_option', 'last_option_explicit', 'specific_product', 'unclear'], {\n  none: 'none',\n  latest: 'last_option',\n  previous_option: 'last_option',\n  prior_option: 'last_option',\n  cheaper: 'cheaper_option',\n  cheapest: 'cheaper_option',\n  first: 'first_option',\n  last: 'last_option_explicit',\n  product: 'specific_product',\n  specific: 'specific_product',\n  ambiguous: 'unclear',\n}, 'reference_type');\nif (reference_type === undefined) {\n  reference_type = referenceHint?.type ?? 'none';\n}\n\nlet resolved_product_id = normalizeText(rawReference.resolved_product_id);\nlet resolved_product_name = normalizeText(rawReference.resolved_product_name);\nlet resolved = typeof rawReference.resolved === 'boolean' ? rawReference.resolved : false;\n\nconst exactProductName = normalizeText(modelMatches[0] ?? null);\nif (!resolved && reference_type === 'specific_product' && exactProductName) {\n  const exactMatch = shownProducts.find((item) => (item.name ?? '').toLowerCase() === exactProductName.toLowerCase())\n    ?? (currentInterest && (currentInterest.name ?? '').toLowerCase() === exactProductName.toLowerCase() ? currentInterest : null);\n  if (exactMatch) {\n    resolved = true;\n    resolved_product_id = exactMatch.id;\n    resolved_product_name = exactMatch.name ?? exactProductName;\n  } else {\n    resolved_product_name = exactProductName;\n  }\n}\nif (!resolved && ['last_option', 'cheaper_option', 'first_option', 'last_option_explicit'].includes(reference_type)) {\n  const candidate = resolveReferenceCandidate(reference_type);\n  if (candidate) {\n    resolved = true;\n    resolved_product_id = candidate.id;\n    resolved_product_name = candidate.name ?? null;\n  }\n}\nif (reference_type === 'none' && exactProductName && (shownProducts.length > 0 || currentInterest)) {\n  reference_type = 'specific_product';\n}\nif (reference_type !== 'none' && !resolved && !resolved_product_name) {\n  resolved_product_name = exactProductName;\n}\nif (reference_type !== 'none' && !resolved && reference_type !== 'specific_product') {\n  issues.push('reference_unresolved:' + reference_type);\n}\n\nconst rawConstraints = isRecord(rawResponse?.constraints_update) ? rawResponse.constraints_update : {};\nconst constraints_update = {\n  budget_etb: normalizeNullableNumber(rawConstraints.budget_etb) ?? parseBudget(),\n  brand: normalizeText(rawConstraints.brand) ?? normalizeText(brandMatch?.[1] ?? null),\n  model: normalizeText(rawConstraints.model) ?? exactProductName,\n  storage: normalizeText(rawConstraints.storage) ?? normalizeText(storageMatch?.[0] ?? null),\n  condition: normalizeText(rawConstraints.condition) ?? normalizeText(conditionMatch?.[1] ?? null),\n};\n\nconst hasConstraintUpdate = Object.values(constraints_update).some((value) => value !== null);\n\nconst rawMessageFunction = normalizeEnum(rawResponse?.message_function, ['fresh_request', 'refinement', 'follow_up', 'negotiation', 'info_request', 'acknowledgment', 'off_topic', 'ambiguous_reference'], {\n  new_request: 'fresh_request',\n  new_topic: 'fresh_request',\n  refine: 'refinement',\n  refinement_of_constraints: 'refinement',\n  followup: 'follow_up',\n  follow_up_request: 'follow_up',\n  bargain: 'negotiation',\n  negotiate: 'negotiation',\n  store_info: 'info_request',\n  info: 'info_request',\n  ack: 'acknowledgment',\n  acknowledgement: 'acknowledgment',\n  greeting: 'off_topic',\n  small_talk: 'off_topic',\n  offtopic: 'off_topic',\n  ambiguous: 'ambiguous_reference',\n}, 'message_function');\nconst rawBusinessIntent = normalizeEnum(rawResponse?.business_intent, ['buy', 'exchange', 'store_info', 'support', 'none'], {\n  product_search: 'buy',\n  pricing: 'buy',\n  stock_check: 'buy',\n  shop_info: 'store_info',\n  info_request: 'store_info',\n  faq: 'store_info',\n  help: 'support',\n  null: 'none',\n}, 'business_intent');\nconst rawTopic = normalizeEnum(rawResponse?.topic, ['product_search', 'pricing', 'stock_check', 'exchange', 'store_info', 'support', 'general', 'none'], {\n  product: 'product_search',\n  buy: 'product_search',\n  price: 'pricing',\n  stock: 'stock_check',\n  availability: 'stock_check',\n  info: 'store_info',\n  info_request: 'store_info',\n  shop_info: 'store_info',\n  faq: 'store_info',\n  help: 'support',\n  support_request: 'support',\n  null: 'none',\n}, 'topic');\nconst rawContextRelation = normalizeEnum(rawResponse?.context_relation, ['new_topic', 'continues_current_topic', 'refines_known_constraints', 'references_previous_options', 'unclear'], {\n  new: 'new_topic',\n  continue: 'continues_current_topic',\n  continuing: 'continues_current_topic',\n  refine: 'refines_known_constraints',\n  refinement: 'refines_known_constraints',\n  references_previous: 'references_previous_options',\n  previous_options: 'references_previous_options',\n  follow_up: 'continues_current_topic',\n}, 'context_relation');\n\nconst currentFlowToIntent = {\n  buy: 'buy',\n  exchange: 'exchange',\n  info: 'store_info',\n  support: 'support',\n};\n\nconst inferredTopic = rawTopic ?? (\n  storeInfoCue ? 'store_info'\n  : exchangeCue ? 'exchange'\n  : supportCue ? 'support'\n  : negotiationCue ? 'pricing'\n  : stockCue ? 'stock_check'\n  : (pricingCue || constraints_update.budget_etb !== null) ? 'pricing'\n  : (constraints_update.brand || constraints_update.model || reference_type !== 'none') ? 'product_search'\n  : offTopicCue ? 'none'\n  : (hasActiveContext && currentFlow === 'buy') ? 'general'\n  : text ? 'general' : 'none'\n);\n\nconst inferredBusinessIntent = rawBusinessIntent ?? (\n  inferredTopic === 'exchange' ? 'exchange'\n  : inferredTopic === 'store_info' ? 'store_info'\n  : inferredTopic === 'support' ? 'support'\n  : inferredTopic === 'none' ? (currentFlowToIntent[currentFlow] ?? 'none')\n  : (['pricing', 'stock_check', 'product_search', 'general'].includes(inferredTopic) && (hasActiveContext || constraints_update.brand || constraints_update.model || reference_type !== 'none' || pricingCue || stockCue))\n    ? 'buy'\n    : 'none'\n);\n\nconst inferredContextRelation = rawContextRelation ?? (\n  reference_type !== 'none' ? 'references_previous_options'\n  : hasConstraintUpdate && hasActiveContext ? 'refines_known_constraints'\n  : hasActiveContext && inferredBusinessIntent !== 'none' ? 'continues_current_topic'\n  : text ? 'new_topic' : 'unclear'\n);\n\nconst rawShouldReuse = typeof rawResponse?.should_reuse_existing_context === 'boolean'\n  ? rawResponse.should_reuse_existing_context\n  : undefined;\nconst should_reuse_existing_context = rawShouldReuse !== undefined\n  ? rawShouldReuse\n  : (inferredContextRelation !== 'new_topic'\n    || ['refinement', 'follow_up', 'negotiation', 'ambiguous_reference'].includes(rawMessageFunction ?? '')\n    || reference_type !== 'none');\n\nconst inferredMessageFunction = rawMessageFunction ?? (\n  acknowledgmentCue ? 'acknowledgment'\n  : (reference_type !== 'none' && !resolved) ? 'ambiguous_reference'\n  : reference_type !== 'none' ? 'follow_up'\n  : inferredTopic === 'store_info' ? 'info_request'\n  : negotiationCue ? 'negotiation'\n  : hasConstraintUpdate && hasActiveContext ? 'refinement'\n  : hasActiveContext && inferredBusinessIntent !== 'none' ? 'follow_up'\n  : offTopicCue || inferredBusinessIntent === 'none' ? 'off_topic'\n  : 'fresh_request'\n);\n\nconst rawKnownConstraints = isRecord(rawResponse?.known_constraints_used) ? rawResponse.known_constraints_used : {};\nconst known_constraints_used = {\n  budget_etb: normalizeNullableNumber(rawKnownConstraints.budget_etb) ?? (should_reuse_existing_context ? sessionConstraints.budget_etb : null),\n  brand: normalizeText(rawKnownConstraints.brand) ?? (should_reuse_existing_context ? sessionConstraints.brand : null),\n  model: normalizeText(rawKnownConstraints.model) ?? (should_reuse_existing_context ? sessionConstraints.model : null),\n};\n\nconst rawConfidence = Number(rawResponse?.confidence);\nlet confidence = Number.isFinite(rawConfidence)\n  ? clamp(rawConfidence, 0, 1)\n  : (\n    inferredMessageFunction === 'acknowledgment' ? 0.96\n    : inferredMessageFunction === 'off_topic' ? 0.83\n    : inferredMessageFunction === 'ambiguous_reference' ? 0.55\n    : inferredMessageFunction === 'negotiation' ? 0.8\n    : inferredMessageFunction === 'follow_up' ? 0.78\n    : inferredMessageFunction === 'refinement' ? 0.82\n    : inferredMessageFunction === 'info_request' ? 0.85\n    : 0.76\n  );\nif (reference_type !== 'none' && !resolved) {\n  confidence = Math.min(confidence, 0.58);\n}\nif (!rawResponse) {\n  confidence = Math.min(confidence, 0.62);\n}\n\nconst ambiguity_reason = normalizeText(rawResponse?.ambiguity_reason)\n  ?? ((reference_type !== 'none' && !resolved) ? 'reference_not_resolved_from_session'\n    : (inferredContextRelation === 'unclear' ? 'message_needs_more_context' : null));\n\nconst understanding_output = {\n  message_function: inferredMessageFunction,\n  business_intent: inferredBusinessIntent,\n  topic: inferredTopic,\n  context_relation: inferredContextRelation,\n  reference_resolution: {\n    reference_type,\n    resolved: Boolean(resolved),\n    resolved_product_id: resolved_product_id ?? null,\n    resolved_product_name: resolved_product_name ?? null,\n  },\n  constraints_update,\n  known_constraints_used,\n  should_reuse_existing_context: Boolean(should_reuse_existing_context),\n  confidence,\n  ambiguity_reason,\n  reasoning: normalizeText(rawResponse?.reasoning) ?? 'guard_normalized_structured_understanding',\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    understanding_meta: {\n      valid: issues.length === 0,\n      issues,\n      parsed_source: rawResponse,\n      timestamp: Date.now(),\n    },\n  },\n}];"
+        },
+        "id": "validation-node",
+        "name": "Understanding JSON Guard",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1520,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst understanding_meta = input.understanding_meta && typeof input.understanding_meta === 'object' ? input.understanding_meta : {};\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return { id: String(value), brand: null, model: null, storage: null, condition: null, price_etb: null, name: String(value), raw: value, index };\n  }\n  if (!isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.name ?? value.title),\n    storage: normalizeText(value.storage),\n    condition: normalizeText(value.condition),\n    price_etb: normalizeNullableNumber(priceValue),\n    name: [value.brand, value.model].filter(Boolean).join(' ').trim() || normalizeText(value.name ?? value.title),\n    raw: value,\n    index,\n  };\n};\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 1);\nconst currentFlow = session.conversation_state?.current_flow ?? null;\nconst currentTopic = session.conversation_state?.current_topic ?? null;\nconst existingConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst existingConstraints = {\n  budget_etb: normalizeNullableNumber(existingConstraintsSource.budget_etb),\n  brand: normalizeText(existingConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(existingConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeText(existingConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(existingConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\n\nconst constraintsUpdateSource = isRecord(understanding_output.constraints_update) ? understanding_output.constraints_update : {};\nconst constraints_update = {\n  budget_etb: normalizeNullableNumber(constraintsUpdateSource.budget_etb),\n  brand: normalizeText(constraintsUpdateSource.brand),\n  model: normalizeText(constraintsUpdateSource.model),\n  storage: normalizeText(constraintsUpdateSource.storage),\n  condition: normalizeText(constraintsUpdateSource.condition),\n};\nconst mergedConstraints = {\n  budget_etb: constraints_update.budget_etb ?? existingConstraints.budget_etb,\n  brand: constraints_update.brand ?? existingConstraints.brand,\n  model: constraints_update.model ?? existingConstraints.model,\n  storage: constraints_update.storage ?? existingConstraints.storage,\n  condition: constraints_update.condition ?? existingConstraints.condition,\n};\n\nconst referenceSource = isRecord(understanding_output.reference_resolution) ? understanding_output.reference_resolution : {};\nconst reference_resolution = {\n  reference_type: normalizeText(referenceSource.reference_type) ?? 'none',\n  resolved: Boolean(referenceSource.resolved),\n  resolved_product_id: normalizeText(referenceSource.resolved_product_id),\n  resolved_product_name: normalizeText(referenceSource.resolved_product_name),\n};\n\nconst resolveProductById = (id) => shownProducts.find((item) => item.id === id) ?? (currentInterest?.id === id ? currentInterest : null) ?? null;\nconst resolvedProduct = reference_resolution.resolved && reference_resolution.resolved_product_id\n  ? resolveProductById(reference_resolution.resolved_product_id)\n  : null;\n\nconst flowFromIntent = {\n  buy: 'buy',\n  exchange: 'exchange',\n  store_info: 'info',\n  support: 'support',\n  none: null,\n};\nconst currentIntent = {\n  buy: 'buy',\n  exchange: 'exchange',\n  info: 'store_info',\n  support: 'support',\n}[currentFlow] ?? 'none';\n\nconst flow = flowFromIntent[understanding_output.business_intent ?? 'none'] ?? flowFromIntent[currentIntent] ?? null;\nconst topic = understanding_output.topic === 'none' ? null : (understanding_output.topic ?? currentTopic ?? null);\nconst hasActiveContext = Boolean(\n  currentFlow\n  || currentTopic\n  || shownProducts.length > 0\n  || currentInterest\n  || Object.values(existingConstraints).some((value) => value !== null)\n  || (Array.isArray(session.conversation_history) && session.conversation_history.length > 0)\n);\n\nconst productContext = {\n  brand: mergedConstraints.brand,\n  model: mergedConstraints.model,\n  storage: mergedConstraints.storage,\n  condition: mergedConstraints.condition,\n  budget_etb: mergedConstraints.budget_etb,\n  current_interest: currentInterest ? currentInterest.raw : null,\n  context_relation: understanding_output.context_relation ?? 'unclear',\n};\nconst hasProductContext = Boolean(\n  resolvedProduct\n  || reference_resolution.resolved\n  || productContext.brand\n  || productContext.model\n  || currentInterest\n  || shownProducts.length > 0\n);\n\nconst missing_fields = [];\nif (flow === 'buy' && ['product_search', 'pricing', 'stock_check', 'general', null].includes(topic) && !hasProductContext) {\n  missing_fields.push('model');\n}\nif (flow === 'exchange' && !productContext.condition && !currentInterest && !shownProducts.length) {\n  missing_fields.push('condition');\n}\nconst last_asked_key = missing_fields[0] ?? null;\n\nlet rules_output = {\n  reply_mode: 'off_topic_redirect',\n  should_call_resolver: false,\n  resolver_input: {\n    flow: flow ?? currentFlow ?? null,\n    product_context: productContext,\n    missing_fields,\n    resolved_reference: resolvedProduct ? { id: resolvedProduct.id, raw: resolvedProduct.raw } : null,\n    resolved_product_name: reference_resolution.resolved_product_name ?? ([productContext.brand, productContext.model].filter(Boolean).join(' ').trim() || null),\n  },\n  session_update: {\n    last_topic: topic,\n    flow_stage: flow ?? currentFlow ?? null,\n    ambiguous_reference: reference_resolution.reference_type !== 'none' ? reference_resolution.reference_type : null,\n    resolved_ambiguity: Boolean(reference_resolution.resolved),\n    collected_constraints: mergedConstraints,\n    last_asked_key,\n  },\n  confidence: typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0,\n  reasoning: 'default_off_topic_redirect',\n};\n\nconst messageFunction = understanding_output.message_function ?? 'off_topic';\nconst contextRelation = understanding_output.context_relation ?? 'unclear';\nconst confidence = typeof understanding_output.confidence === 'number' ? understanding_output.confidence : 0;\n\nif (event.event_type === 'start_reset') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'small_talk_redirect',\n    should_call_resolver: false,\n    session_update: {\n      ...rules_output.session_update,\n      last_topic: null,\n      flow_stage: null,\n      ambiguous_reference: null,\n      resolved_ambiguity: false,\n      last_asked_key: null,\n    },\n    reasoning: 'start_reset_welcome',\n  };\n} else if (event.event_type === 'deep_link_start') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'business_resolve',\n    should_call_resolver: true,\n    resolver_input: {\n      ...rules_output.resolver_input,\n      flow: 'buy',\n      missing_fields: [],\n    },\n    session_update: {\n      ...rules_output.session_update,\n      last_topic: 'product_search',\n      flow_stage: 'buy',\n      last_asked_key: null,\n    },\n    reasoning: 'deep_link_start_business_entry',\n  };\n} else if (!Number.isFinite(confidence) || confidence < 0.6) {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'handoff_admin',\n    should_call_resolver: false,\n    reasoning: 'low_understanding_confidence',\n  };\n} else if (messageFunction === 'acknowledgment') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'acknowledge_and_close',\n    should_call_resolver: false,\n    reasoning: 'acknowledgment_detected',\n  };\n} else if (messageFunction === 'off_topic') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'off_topic_redirect',\n    should_call_resolver: false,\n    reasoning: 'off_topic_detected',\n  };\n} else if (messageFunction === 'ambiguous_reference') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: reference_resolution.resolved ? 'business_resolve' : 'clarify_reference',\n    should_call_resolver: Boolean(reference_resolution.resolved),\n    reasoning: reference_resolution.resolved ? 'ambiguous_reference_resolved_from_session' : 'ambiguous_reference_needs_clarification',\n  };\n} else if (messageFunction === 'info_request') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: 'business_resolve',\n    should_call_resolver: true,\n    resolver_input: {\n      ...rules_output.resolver_input,\n      flow: 'info',\n      missing_fields: [],\n    },\n    session_update: {\n      ...rules_output.session_update,\n      flow_stage: 'info',\n      last_asked_key: null,\n    },\n    reasoning: 'store_info_request',\n  };\n} else if (messageFunction === 'negotiation') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: hasProductContext || hasActiveContext ? (currentFlow === 'buy' ? 'resume_previous_flow' : 'business_resolve') : 'clarify_reference',\n    should_call_resolver: Boolean(hasProductContext || hasActiveContext),\n    reasoning: hasProductContext || hasActiveContext ? 'negotiation_uses_existing_context' : 'negotiation_needs_product_context',\n  };\n} else if (messageFunction === 'refinement') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: currentFlow && (contextRelation === 'refines_known_constraints' || understanding_output.should_reuse_existing_context) ? 'resume_previous_flow' : 'business_resolve',\n    should_call_resolver: true,\n    reasoning: 'refinement_updates_known_constraints',\n  };\n} else if (messageFunction === 'follow_up') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: reference_resolution.reference_type !== 'none' && !reference_resolution.resolved ? 'clarify_reference' : (hasActiveContext ? 'resume_previous_flow' : 'business_resolve'),\n    should_call_resolver: reference_resolution.reference_type !== 'none' && !reference_resolution.resolved ? false : true,\n    reasoning: hasActiveContext ? 'follow_up_continues_context' : 'follow_up_without_context',\n  };\n} else if (messageFunction === 'fresh_request') {\n  rules_output = {\n    ...rules_output,\n    reply_mode: understanding_output.business_intent === 'none' ? 'off_topic_redirect' : 'business_resolve',\n    should_call_resolver: understanding_output.business_intent !== 'none',\n    reasoning: understanding_output.business_intent === 'none' ? 'fresh_non_business_message' : 'fresh_business_request',\n  };\n}\n\nreturn [{ json: { event, session, client_config, understanding_output, understanding_meta, rules_output } }];"
+        },
+        "id": "rules-layer",
+        "name": "Rules Layer",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1760,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $json ?? {};\nconst event = input.event && typeof input.event === 'object' ? input.event : {};\nconst session = input.session && typeof input.session === 'object' ? input.session : {};\nconst client_config = input.client_config && typeof input.client_config === 'object' ? input.client_config : {};\nconst understanding_output = input.understanding_output && typeof input.understanding_output === 'object' ? input.understanding_output : {};\nconst rules_output = input.rules_output && typeof input.rules_output === 'object' ? input.rules_output : {};\nconst resolverInput = rules_output.resolver_input && typeof rules_output.resolver_input === 'object' ? rules_output.resolver_input : {};\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst normalizeProduct = (value, index) => {\n  if (value === null || value === undefined) return null;\n  if (typeof value === 'string' || typeof value === 'number') {\n    return { id: String(value), brand: null, model: null, price_etb: null, storage: null, condition: null, stock_status: null, raw: value };\n  }\n  if (!isRecord(value)) return null;\n  const priceValue = value.price_etb ?? value.price ?? value.amount ?? null;\n  return {\n    id: String(value.id ?? value.product_id ?? value.sku ?? ('product_' + index)),\n    brand: normalizeText(value.brand),\n    model: normalizeText(value.model ?? value.name ?? value.title),\n    price_etb: normalizeNullableNumber(priceValue),\n    storage: normalizeText(value.storage),\n    condition: normalizeText(value.condition),\n    stock_status: normalizeText(value.stock_status),\n    raw: value,\n  };\n};\n\nconst shownProducts = Array.isArray(session.flow_context?.buy_flow?.shown_products)\n  ? session.flow_context.buy_flow.shown_products.map(normalizeProduct).filter(Boolean)\n  : [];\nconst currentInterest = normalizeProduct(session.flow_context?.buy_flow?.current_interest, shownProducts.length + 10);\nconst sessionConstraintsSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst sessionConstraints = {\n  budget_etb: normalizeNullableNumber(sessionConstraintsSource.budget_etb),\n  brand: normalizeText(sessionConstraintsSource.brand ?? currentInterest?.brand ?? null),\n  model: normalizeText(sessionConstraintsSource.model ?? currentInterest?.model ?? null),\n  storage: normalizeText(sessionConstraintsSource.storage ?? currentInterest?.storage ?? null),\n  condition: normalizeText(sessionConstraintsSource.condition ?? currentInterest?.condition ?? null),\n};\nconst productContextSource = isRecord(resolverInput.product_context) ? resolverInput.product_context : {};\nconst effectiveConstraints = {\n  budget_etb: normalizeNullableNumber(productContextSource.budget_etb) ?? sessionConstraints.budget_etb,\n  brand: normalizeText(productContextSource.brand) ?? sessionConstraints.brand,\n  model: normalizeText(productContextSource.model) ?? sessionConstraints.model,\n  storage: normalizeText(productContextSource.storage) ?? sessionConstraints.storage,\n  condition: normalizeText(productContextSource.condition) ?? sessionConstraints.condition,\n};\n\nconst requestedName = normalizeText(resolverInput.resolved_product_name)\n  ?? ([effectiveConstraints.brand, effectiveConstraints.model].filter(Boolean).join(' ').trim() || null);\nlet selectedProduct = null;\nif (resolverInput.resolved_reference?.id) {\n  selectedProduct = shownProducts.find((product) => product.id === resolverInput.resolved_reference.id) ?? null;\n}\nif (!selectedProduct && requestedName) {\n  const lowered = requestedName.toLowerCase();\n  selectedProduct = shownProducts.find((product) => {\n    const name = [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\n    return Boolean(name) && name === lowered;\n  }) ?? null;\n}\nif (!selectedProduct && currentInterest) {\n  const sameModel = effectiveConstraints.model && currentInterest.model && currentInterest.model.toLowerCase() === effectiveConstraints.model.toLowerCase();\n  const sameBrand = effectiveConstraints.brand && currentInterest.brand && currentInterest.brand.toLowerCase() === effectiveConstraints.brand.toLowerCase();\n  if (!effectiveConstraints.model || sameModel || sameBrand) {\n    selectedProduct = currentInterest;\n  }\n}\n\nconst matchesConstraints = (product) => {\n  if (!product) return false;\n  if (effectiveConstraints.brand && (!product.brand || !product.brand.toLowerCase().includes(effectiveConstraints.brand.toLowerCase()))) return false;\n  if (effectiveConstraints.model) {\n    const name = [product.brand, product.model].filter(Boolean).join(' ').trim().toLowerCase();\n    if (!name.includes(effectiveConstraints.model.toLowerCase())) return false;\n  }\n  if (effectiveConstraints.storage && (!product.storage || product.storage.toLowerCase() !== effectiveConstraints.storage.toLowerCase())) return false;\n  if (effectiveConstraints.condition && (!product.condition || product.condition.toLowerCase() !== effectiveConstraints.condition.toLowerCase())) return false;\n  return true;\n};\n\nconst filteredProducts = shownProducts.filter(matchesConstraints);\nconst products = selectedProduct\n  ? [selectedProduct]\n  : (filteredProducts.length > 0 ? filteredProducts.slice(0, 3) : shownProducts.slice(0, 3));\nconst numericPrices = products.map((product) => product.price_etb).filter((value) => Number.isFinite(value));\nconst priceRange = numericPrices.length > 0 ? { min: Math.min(...numericPrices), max: Math.max(...numericPrices) } : null;\nlet result_type = 'no_match';\nlet next_step = 'ask_clarification';\nlet exchange_context = null;\n\nif (rules_output.reply_mode === 'clarify_reference') {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n} else if (resolverInput.flow === 'exchange') {\n  result_type = 'exchange_offer';\n  next_step = 'ask_clarification';\n  exchange_context = {\n    current_interest: session.flow_context?.buy_flow?.current_interest ?? null,\n    collected_constraints: effectiveConstraints,\n  };\n} else if (resolverInput.flow === 'info' || resolverInput.flow === 'support') {\n  result_type = 'no_match';\n  next_step = 'ask_clarification';\n} else if (selectedProduct) {\n  result_type = 'single_product';\n  next_step = 'show_single';\n} else if (filteredProducts.length > 1) {\n  result_type = 'multiple_options';\n  next_step = 'show_options';\n} else if ((resolverInput.missing_fields ?? []).length > 0) {\n  result_type = 'clarification_needed';\n  next_step = 'ask_clarification';\n}\n\nconst resolver_output = {\n  result_type,\n  products,\n  exchange_context,\n  next_step,\n  facts_for_reply: {\n    product_found: Boolean(selectedProduct || products.length > 0),\n    how_many_options: products.length,\n    stock_status: selectedProduct?.stock_status ?? null,\n    price_range: priceRange,\n  },\n};\n\nreturn [{ json: { event, session, client_config, understanding_output, rules_output, resolver_output } }];"
+        },
+        "id": "business-data-resolver",
+        "name": "Business Data Resolver",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          180
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authorization",
+                "value": "={{ 'Bearer ' + $env.OPENROUTER_API_KEY }}"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  model: 'google/gemini-3.1-flash-lite-preview',\n  temperature: 0.15,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: \"You are Pass 2 Reply AI for the TedyTech Telegram bot.\\\\nReturn ONLY one valid JSON object with exactly this shape: {\\\"reply_text\\\":\\\"string\\\"}.\\\\nDo not add any other keys. Do not explain anything. Do not add markdown fences.\\\\nUse only the provided customer_text, understanding_output, rules_output, resolver_output, reply_context, last_messages, and client_config.\\\\nNever invent stock, price, warranty, availability, delivery, location, or shop facts.\\\\nKeep the reply to max 3 short lines.\\\\nDefault to natural Amharic in Ethiopic script for conversation.\\\\nUse English only for brand, model, storage, and product names where natural.\\\\nDo not produce awkward English-Amharic transliteration.\\\\nDo not use vague words like technology, electronics, gadgets, or accessories unless the customer explicitly asks for them.\\\\nPrefer wording around phone, mobile, model, exchange, shop, price, and availability.\\\\nOne emoji max, and only when the tone is playful.\\\\nStrict continuity rules:\\\\n- If reply_context.should_greet is false, never greet, never welcome, and never reopen with a seller introduction.\\\\n- Only greet on explicit restart or the first meaningful turn of a new conversation.\\\\n- If reply_context.has_active_context is true, continue that context instead of asking a generic buying-or-exchange question.\\\\n- If the user message is clear, respond to that exact message and do not replace it with a generic opening.\\\\n- If current_flow or current_topic exists, use it to continue the thread.\\\\nStrict reply mode rules:\\\\n- acknowledge_and_close: short close only, no question, no greeting.\\\\n- off_topic_redirect: short redirect only, one gentle question max, no greeting.\\\\n- small_talk_redirect: short natural acknowledgment plus one phone-related next step, no repeated welcome.\\\\n- clarify_reference: ask which one the customer means, no product facts, no generic reopening.\\\\n- resume_previous_flow: continue the previous thread directly, no restart behavior.\\\\n- business_resolve: use resolver facts only. If resolver facts are weak, ask one narrow follow-up tied to the actual customer text or current context.\\\\n- handoff_admin: brief reassurance only, no question, no greeting.\\\\nNarrow clarification rules:\\\\n- Do not ask buying-or-exchange unless intent is truly unclear and there is no useful session context.\\\\n- If the customer asked about price, ask a narrow follow-up about the model or brand if needed.\\\\n- If the customer asked available?, use the current item or current flow if present; do not reopen from zero.\\\\n- If the customer said that one or cheaper one, stay in reference clarification or prior-context continuation; do not reopen with a catalog greeting.\\\\nStyle rules:\\\\n- Sound like a practical Ethiopian phone seller on Telegram.\\\\n- Be short, direct, natural, and sales-aware.\\\\n- No robotic assistant phrasing.\\\\n- No broad onboarding copy unless this is truly a new conversation.\\\\nOutput JSON only.\" },\n    {\n      role: 'user',\n      content: JSON.stringify({\n        customer_text: $json.event?.text ?? '',\n        understanding_output: $json.understanding_output ?? null,\n        rules_output: $json.rules_output ?? null,\n        resolver_output: $json.resolver_output ?? null,\n        reply_context: {\n          event_type: $json.event?.event_type ?? null,\n          current_topic: $json.session?.conversation_state?.current_topic ?? null,\n          current_flow: $json.session?.conversation_state?.current_flow ?? null,\n          is_active: $json.session?.conversation_state?.is_active ?? true,\n          message_count: Number($json.session?.message_count ?? 0),\n          history_count: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.length : 0,\n          has_active_context: Boolean(\n            ($json.session?.conversation_state?.current_flow ?? null)\n            || ($json.session?.conversation_state?.current_topic ?? null)\n            || (Array.isArray($json.session?.conversation_history) && $json.session.conversation_history.length > 0)\n            || (Array.isArray($json.session?.flow_context?.buy_flow?.shown_products) && $json.session.flow_context.buy_flow.shown_products.length > 0)\n            || $json.session?.flow_context?.buy_flow?.current_interest\n          ),\n          should_greet: Boolean(\n            ($json.event?.event_type === 'start_reset')\n            || (\n              Number($json.session?.message_count ?? 0) === 0\n              && (!Array.isArray($json.session?.conversation_history) || $json.session.conversation_history.length === 0)\n              && !$json.session?.conversation_state?.current_flow\n              && !$json.session?.conversation_state?.current_topic\n            )\n          ),\n        },\n        last_messages: Array.isArray($json.session?.conversation_history) ? $json.session.conversation_history.slice(-3) : [],\n        client_config: $json.client_config ?? null,\n      }),\n    },\n  ],\n}) }}",
+          "options": {}
+        },
+        "id": "reply-ai",
+        "name": "Reply AI",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2480,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "let base = {};\ntry {\n  base = $item(0).$node['Business Data Resolver'].json ?? {};\n} catch {\n  base = {};\n}\nif (!base.rules_output) {\n  try {\n    base = $item(0).$node['Rules Layer'].json ?? base;\n  } catch {}\n}\nconst replyPayload = $json ?? {};\nconst event = base.event && typeof base.event === 'object' ? base.event : {};\nconst session = base.session && typeof base.session === 'object' ? base.session : {};\nconst client_config = base.client_config && typeof base.client_config === 'object' ? base.client_config : {};\nconst understanding_output = base.understanding_output && typeof base.understanding_output === 'object' ? base.understanding_output : {};\nconst rules_output = base.rules_output && typeof base.rules_output === 'object' ? base.rules_output : {};\nconst resolver_output = base.resolver_output && typeof base.resolver_output === 'object' ? base.resolver_output : null;\nconst issues = [];\n\nconst isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);\nconst normalizeText = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;\nconst normalizeNullableNumber = (value) => {\n  if (value === null || value === undefined || value === '') return null;\n  const numeric = Number(value);\n  return Number.isFinite(numeric) ? numeric : null;\n};\nconst parseJsonObject = (value) => {\n  if (!value) return null;\n  if (isRecord(value)) return value;\n  if (typeof value !== 'string' || !value.trim()) return null;\n  try {\n    const parsed = JSON.parse(value);\n    return isRecord(parsed) ? parsed : null;\n  } catch {\n    return null;\n  }\n};\n\nconst parsedReply = parseJsonObject(replyPayload.choices?.[0]?.message?.content)\n  || parseJsonObject(replyPayload.output_text)\n  || parseJsonObject(replyPayload.text)\n  || parseJsonObject(replyPayload.data)\n  || parseJsonObject(replyPayload.result)\n  || parseJsonObject(replyPayload);\n\nconst reply_text = typeof parsedReply?.reply_text === 'string' ? parsedReply.reply_text.trim() : '';\nif (!reply_text) issues.push('missing_reply_text');\nconst lineCount = reply_text ? reply_text.split(/\\r?\\n/).filter((line) => line.trim()).length : 0;\nif (lineCount > 3) issues.push('reply_exceeds_max_lines');\nif (rules_output.reply_mode === 'acknowledge_and_close' && /[?]/.test(reply_text)) issues.push('acknowledge_and_close_should_not_ask_question');\nif (rules_output.reply_mode === 'handoff_admin' && /[?]/.test(reply_text)) issues.push('handoff_admin_should_not_ask_question');\nif (rules_output.should_call_resolver && !resolver_output) issues.push('resolver_expected_but_missing');\nif (!rules_output.should_call_resolver && rules_output.reply_mode === 'business_resolve') issues.push('business_resolve_requires_resolver');\nif (rules_output.reply_mode === 'business_resolve' && resolver_output && !['single_product', 'multiple_options', 'no_match', 'out_of_stock', 'clarification_needed', 'exchange_offer'].includes(resolver_output.result_type)) issues.push('invalid_resolver_result_type');\nif (!['business_resolve', 'off_topic_redirect', 'small_talk_redirect', 'clarify_reference', 'resume_previous_flow', 'acknowledge_and_close', 'handoff_admin'].includes(rules_output.reply_mode)) issues.push('invalid_reply_mode_contract');\n\nconst valid = issues.length === 0;\nconst safe_to_send = valid && Boolean(reply_text);\nconst now = Date.now();\nconst history = Array.isArray(session.conversation_history) ? session.conversation_history : [];\nconst nextHistory = history\n  .concat([{ role: 'user', text: String(event.text ?? ''), timestamp: Number.isFinite(Number(event.timestamp)) ? Number(event.timestamp) : now }])\n  .concat(safe_to_send ? [{ role: 'assistant', text: reply_text, timestamp: now }] : [])\n  .slice(-12);\n\nconst shownProducts = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length > 0\n  ? resolver_output.products\n  : (Array.isArray(session.flow_context?.buy_flow?.shown_products) ? session.flow_context.buy_flow.shown_products : []);\nconst currentInterest = resolver_output && Array.isArray(resolver_output.products) && resolver_output.products.length === 1\n  ? resolver_output.products[0]\n  : (rules_output.resolver_input?.resolved_reference?.raw ?? session.flow_context?.buy_flow?.current_interest ?? null);\nconst flow = rules_output.resolver_input?.flow ?? session.conversation_state?.current_flow ?? null;\nconst sessionConstraintSource = isRecord(session.collected_constraints) ? session.collected_constraints : {};\nconst updateConstraintSource = isRecord(rules_output.session_update?.collected_constraints) ? rules_output.session_update.collected_constraints : {};\nconst mergedConstraints = {\n  budget_etb: normalizeNullableNumber(updateConstraintSource.budget_etb) ?? normalizeNullableNumber(sessionConstraintSource.budget_etb),\n  brand: normalizeText(updateConstraintSource.brand) ?? normalizeText(sessionConstraintSource.brand),\n  model: normalizeText(updateConstraintSource.model) ?? normalizeText(sessionConstraintSource.model),\n  storage: normalizeText(updateConstraintSource.storage) ?? normalizeText(sessionConstraintSource.storage),\n  condition: normalizeText(updateConstraintSource.condition) ?? normalizeText(sessionConstraintSource.condition),\n};\nconst updatedSession = {\n  session_id: String(session.session_id ?? ('sess_' + String(event.userId ?? event.chatId ?? 'guest'))),\n  customer_id: String(session.customer_id ?? event.userId ?? ''),\n  created_at: Number.isFinite(Number(session.created_at)) ? Number(session.created_at) : now,\n  last_message_at: now,\n  message_count: Math.max(0, Number(session.message_count ?? 0)) + 1,\n  conversation_state: {\n    current_topic: rules_output.session_update?.last_topic ?? session.conversation_state?.current_topic ?? null,\n    current_flow: flow,\n    is_active: rules_output.reply_mode !== 'acknowledge_and_close',\n  },\n  flow_context: {\n    buy_flow: {\n      shown_products: shownProducts,\n      current_interest: currentInterest,\n    },\n  },\n  collected_constraints: mergedConstraints,\n  last_asked_key: rules_output.session_update?.last_asked_key ?? session.last_asked_key ?? null,\n  conversation_history: nextHistory,\n  admin_escalation: rules_output.reply_mode === 'handoff_admin'\n    ? { required: true, reason: rules_output.reasoning ?? 'handoff_admin', status: 'pending' }\n    : (session.admin_escalation && typeof session.admin_escalation === 'object' ? session.admin_escalation : { required: false, reason: null, status: null }),\n};\n\nreturn [{\n  json: {\n    event,\n    session,\n    client_config,\n    understanding_output,\n    rules_output,\n    resolver_output,\n    reply_text,\n    valid,\n    issues,\n    safe_to_send,\n    telegram_payload: { chat_id: event.chatId ?? null, text: reply_text },\n    session_update_payload: { userId: event.userId ?? null, chatId: event.chatId ?? null, session: updatedSession },\n    validation_meta: { parsed_reply: parsedReply, timestamp: now },\n  },\n}];"
+        },
+        "id": "side-effects",
+        "name": "Validation",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2720,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "sendChatAction",
+          "chatId": "={{ $json.event.chatId }}",
+          "action": "typing"
+        },
+        "id": "telegram-typing",
+        "name": "Telegram Typing",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          800,
+          180
+        ],
+        "webhookId": "f579adb2-7dcb-47b7-b27c-f389acbafc17"
+      },
+      {
+        "parameters": {
+          "chatId": "={{ $item(0).$node['Validation'].json.telegram_payload.chat_id }}",
+          "text": "={{ $item(0).$node['Validation'].json.reply_text }}",
+          "additionalFields": {
+            "appendAttribution": false
+          }
+        },
+        "id": "telegram-send",
+        "name": "Telegram Send",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "credentials": {
+          "telegramApi": {
+            "id": "lFnI6XXhGbOZJr8X",
+            "name": "Telegram account"
+          }
+        },
+        "position": [
+          3200,
+          300
+        ],
+        "webhookId": "e738a3c0-ae1e-41ef-8b15-0cb4ee2e1608"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{(() => { const base = $env.CONVEX_HTTP_BASE_URL || $env.CONVEX_URL || $env.NEXT_PUBLIC_CONVEX_URL; if (!base) { throw new Error('Missing Convex URL env: CONVEX_HTTP_BASE_URL or CONVEX_URL or NEXT_PUBLIC_CONVEX_URL'); } return String(base).replace(/\\/$/, '').replace(/\\.convex\\.cloud(?=\\/|$)/, '.convex.site'); })() + '/http/session-save'}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($item(0).$node['Validation'].json.session_update_payload) }}",
+          "options": {}
+        },
+        "id": "session-save",
+        "name": "Session Save",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3440,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "9fbfb8f2-af27-4229-a0dd-78a7248d5fcc",
+                "leftValue": "={{ $json.rules_output.should_call_resolver }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "6cf3b3b0-ecc7-4b84-8cf2-885d6188a469",
+        "name": "Should Resolve",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2000,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "2b7c4a7e-5945-4c2a-a27a-cff69a7ca7a4",
+                "leftValue": "={{ $json.safe_to_send }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {
+            "ignoreCase": false
+          }
+        },
+        "id": "de4bc6fc-cd00-4ba0-b3c9-d5ecb82c5309",
+        "name": "Safe To Send",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          2960,
+          300
+        ]
+      }
+    ],
+    "connections": {
+      "Telegram Input": {
+        "main": [
+          [
+            {
+              "node": "Event Normalizer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Event Normalizer": {
+        "main": [
+          [
+            {
+              "node": "Session Load",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Telegram Typing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Load": {
+        "main": [
+          [
+            {
+              "node": "Session Bootstrap",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Session Bootstrap": {
+        "main": [
+          [
+            {
+              "node": "Understanding AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Understanding AI": {
+        "main": [
+          [
+            {
+              "node": "Understanding JSON Guard",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Understanding JSON Guard": {
+        "main": [
+          [
+            {
+              "node": "Rules Layer",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Rules Layer": {
+        "main": [
+          [
+            {
+              "node": "Should Resolve",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should Resolve": {
+        "main": [
+          [
+            {
+              "node": "Business Data Resolver",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Business Data Resolver": {
+        "main": [
+          [
+            {
+              "node": "Reply AI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Reply AI": {
+        "main": [
+          [
+            {
+              "node": "Validation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validation": {
+        "main": [
+          [
+            {
+              "node": "Safe To Send",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Safe To Send": {
+        "main": [
+          [
+            {
+              "node": "Telegram Send",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Telegram Send": {
+        "main": [
+          [
+            {
+              "node": "Session Save",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Abenezer Tadiyos ",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-04-02T22:11:36.364Z",
+        "id": 28,
+        "workflowId": "hc55q2zfas7gG1yu",
+        "versionId": "dd162ccb-61a7-458a-b785-17673f8f0ed6",
+        "event": "deactivated",
+        "userId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      },
+      {
+        "createdAt": "2026-04-02T22:11:36.515Z",
+        "id": 29,
+        "workflowId": "hc55q2zfas7gG1yu",
+        "versionId": "dd162ccb-61a7-458a-b785-17673f8f0ed6",
+        "event": "activated",
+        "userId": "355a015e-6d64-4926-aa24-515c384d8d5f"
+      }
+    ]
+  }
+}

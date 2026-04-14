@@ -1,0 +1,10 @@
+{
+  "id": "gen-1775828800-9iGiuP3bBUZqIk75GjCF",
+  "object": "chat.completion",
+  "created": 1775828800,
+  "model": "google/gemini-3.1-flash-lite-preview-20260303",
+  "provider": "Google",
+  "system_fingerprint": null,
+  "choices": "",
+  "usage": "@{prompt_tokens=1525; completion_tokens=34; total_tokens=1559; cost=0.00043225; is_byok=False; prompt_tokens_details=; cost_details=; completion_tokens_details=}"
+}

@@ -1,0 +1,22 @@
+{
+  "parameters": {
+    "operation": "sendChatAction",
+    "chatId": "={{ $json.event.chatId }}",
+    "action": "typing"
+  },
+  "id": "telegram-typing",
+  "name": "Telegram Typing",
+  "type": "n8n-nodes-base.telegram",
+  "typeVersion": 1.2,
+  "credentials": {
+    "telegramApi": {
+      "id": "lFnI6XXhGbOZJr8X",
+      "name": "Telegram account"
+    }
+  },
+  "position": [
+    800,
+    180
+  ],
+  "webhookId": "fc32c7fa-7b63-466b-84a2-5e3179823d1e"
+}

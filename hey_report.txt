@@ -1,0 +1,31 @@
+=== HEY EXECUTION DEBUG REPORT ===
+Execution ID: undefined
+Started At: undefined
+
+## 2. Meaning Path
+- raw text: Hey
+- message_function: clarification
+- confidence: 0
+- ambiguity: 1
+
+## 3. Rules Path
+- should_call_resolver: false
+- reply_mode: handoff_admin
+- handoff_needed: true
+- next_action: escalate_to_human
+
+## 4. Reply Path
+- Reply AI output: N/A
+- Validation output: አሁን ከሰው ጋር እያገናኘሁዎት ነው፣ ትንሽ ይጠብቁኝ።
+- Validation overrode original: NO
+Note: Set No-Resolver Output was executed.
+
+## 5. Telegram Send Status
+- failed in this execution? NO
+- response payload: {"ok":true,"result":{"message_id":2846,"from":{"id":8516246074,"is_bot":true,"first_name":"Ogra","username":"Tedytech_bot"},"chat":{"id":5948326732,"f
+
+## 6. Session Save Status
+- failed? YES
+- exact bad request reason: Bad request - please check your parameters
+- payload shape that was sent: ["event","chat_id","safe_to_send","reply_text","used_fallback","raw_reply_text","telegram_payload","session_update_payload"]
+- exact payload: {"event":{},"chat_id":null,"safe_to_send":true,"reply_text":"አሁን ከሰው ጋር እያገናኘሁዎት ነው፣ ትንሽ ይጠብቁኝ።","used_fallback":false,"raw_reply_text":"አሁን ከሰው ጋር እያገናኘሁዎት ነው፣ ትንሽ ይጠብቁኝ።","telegram_payload":{"chat_id":null},"session_update_payload":{"userId":null,"chatId":null,"session":{"last_message_at":17756037

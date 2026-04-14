@@ -1,0 +1,169 @@
+// convex/messages.ts
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+/**
+ * Atomic customer message ingestion from Telegram via n8n.
+ *
+ * Steps (all in one DB transaction):
+ * 1. Idempotency check: if telegramMessageId already stored, return early.
+ * 2. Upsert thread by telegramId:
+ *    - Create if missing (status=new, unreadCount=1, firstMessageAt=ts)
+ *    - Update if exists (lastCustomerMessageAt, unreadCount++, reopen if done)
+ *    - Set firstMessageAt ONLY if currently null (immutable once set)
+ * 3. Insert message row with sender="customer", senderRole="customer".
+ *
+ * Called by n8n HTTP node:
+ *   POST https://fastidious-schnauzer-265.convex.cloud/api/mutation
+ *   { "path": "messages:ingestTelegramMessage", "args": { ... } }
+ */
+export const ingestTelegramMessage = mutation({
+  args: {
+    telegramId: v.string(),           // Telegram user/chat ID (string of int)
+    customerFirstName: v.string(),
+    customerLastName: v.optional(v.string()),
+    customerUsername: v.optional(v.string()),
+    text: v.string(),                 // message text, caption, or "[photo]" etc.
+    telegramMessageId: v.string(),    // "<chatId>:<messageId>" composite key
+    mediaFileId: v.optional(v.string()),  // Telegram file_id (no URL fetch at ingest)
+    mediaType: v.optional(v.string()),    // "photo" | "document" | "voice"
+    createdAt: v.optional(v.number()),    // epoch ms from msg.date * 1000; defaults to Date.now()
+  },
+  handler: async (ctx, args) => {
+    const ts = args.createdAt ?? Date.now();
+
+    // ── 1. Idempotency ───────────────────────────────────────────────────────
+    const existingMsg = await ctx.db
+      .query("messages")
+      .withIndex("by_telegramMessageId", (q) =>
+        q.eq("telegramMessageId", args.telegramMessageId)
+      )
+      .first();
+    if (existingMsg !== null) {
+      return {
+        threadId: existingMsg.threadId,
+        messageId: existingMsg._id,
+        isDuplicate: true,
+      };
+    }
+
+    // ── 2. Upsert thread ─────────────────────────────────────────────────────
+    const thread = await ctx.db
+      .query("threads")
+      .withIndex("by_telegramId", (q) => q.eq("telegramId", args.telegramId))
+      .first();
+
+    const preview = args.text.slice(0, 100);
+    let threadId;
+
+    if (thread === null) {
+      // New thread — firstMessageAt set on creation
+      threadId = await ctx.db.insert("threads", {
+        telegramId: args.telegramId,
+        customerFirstName: args.customerFirstName,
+        customerLastName: args.customerLastName,
+        customerUsername: args.customerUsername,
+        status: "new",
+        unreadCount: 1,
+        lastMessageAt: ts,
+        lastMessagePreview: preview,
+        lastCustomerMessageAt: ts,
+        firstMessageAt: ts,          // set once, never overwritten
+        hasCustomerMessaged: true,
+        hasAdminReplied: false,
+        lastCustomerMessageHasBudgetKeyword: false,
+        createdAt: ts,
+        updatedAt: ts,
+      });
+    } else {
+      threadId = thread._id;
+
+      // Build patch — always update activity fields
+      const patch: {
+        updatedAt: number;
+        lastMessageAt: number;
+        lastMessagePreview: string;
+        lastCustomerMessageAt: number;
+        unreadCount: number;
+        hasCustomerMessaged: boolean;
+        customerFirstName: string;
+        customerLastName?: string;
+        customerUsername?: string;
+        status?: "new" | "seen" | "done";
+        firstMessageAt?: number;
+      } = {
+        updatedAt: ts,
+        lastMessageAt: ts,
+        lastMessagePreview: preview,
+        lastCustomerMessageAt: ts,
+        unreadCount: thread.unreadCount + 1,
+        hasCustomerMessaged: true,
+        // Refresh profile fields in case name/username changed
+        customerFirstName: args.customerFirstName,
+        customerLastName: args.customerLastName,
+        customerUsername: args.customerUsername,
+      };
+
+      // Reopen closed threads when customer writes again
+      if (thread.status === "done") patch.status = "new";
+
+      // Set firstMessageAt only once (immutable)
+      if (thread.firstMessageAt == null) patch.firstMessageAt = ts;
+
+      await ctx.db.patch(threadId, patch);
+    }
+
+    // ── 3. Insert message ────────────────────────────────────────────────────
+    const messageId = await ctx.db.insert("messages", {
+      threadId,
+      sender: "customer",
+      senderRole: "customer",
+      senderTelegramId: args.telegramId,
+      text: args.text,
+      telegramMessageId: args.telegramMessageId,
+      mediaFileId: args.mediaFileId,
+      mediaType: args.mediaType,
+      createdAt: ts,
+    });
+
+    return { threadId, messageId, isDuplicate: false };
+  },
+});
+
+/**
+ * Create an admin message and update thread.lastAdminMessageAt.
+ * Called by the admin mini app (React frontend) when an admin sends a reply.
+ *
+ * Does NOT need idempotency — admin messages are generated by the app, not Telegram.
+ */
+export const createAdminMessage = mutation({
+  args: {
+    threadId: v.id("threads"),
+    adminTelegramId: v.string(),
+    text: v.string(),
+    senderRole: v.optional(v.union(v.literal("admin"), v.literal("bot"))),
+  },
+  handler: async (ctx, args) => {
+    const ts = Date.now();
+    const role = args.senderRole ?? "admin";
+
+    const messageId = await ctx.db.insert("messages", {
+      threadId: args.threadId,
+      sender: "admin",
+      senderRole: role,
+      senderTelegramId: args.adminTelegramId,
+      text: args.text,
+      createdAt: ts,
+    });
+
+    await ctx.db.patch(args.threadId, {
+      updatedAt: ts,
+      lastMessageAt: ts,
+      lastMessagePreview: args.text.slice(0, 100),
+      lastAdminMessageAt: ts,
+      hasAdminReplied: true,
+    });
+
+    return { messageId };
+  },
+});

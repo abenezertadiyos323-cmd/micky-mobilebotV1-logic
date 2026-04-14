@@ -1,0 +1,149 @@
+{
+  "updatedAt": "2026-04-02T14:55:55.603Z",
+  "createdAt": "2026-04-02T14:52:22.955Z",
+  "id": "9XuOQHcbIZqE8scq",
+  "name": "Abenier Bot Logic Base",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "telegram-input",
+      "name": "Telegram Input",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        320,
+        300
+      ],
+      "webhookId": "81b71f64-ed01-4e30-9f08-7c64f46a45c0"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst message = input.message ?? {};\nconst callback = input.callback_query ?? null;\nconst callbackData = callback?.data ? String(callback.data) : '';\nconst messageText = typeof message.text === 'string' ? message.text : '';\nconst callbackText = typeof callback?.message?.text === 'string' ? callback.message.text : '';\nconst text = messageText || callbackText || '';\nconst chatIdRaw = message.chat?.id ?? callback?.message?.chat?.id ?? '';\nconst userIdRaw = message.from?.id ?? callback?.from?.id ?? '';\nconst messageIdRaw = message.message_id ?? callback?.message?.message_id ?? callback?.id ?? '';\nconst startMatch = text.match(/^\\/start(?:\\s+(.+))?$/);\nconst deepLink = startMatch?.[1] ? String(startMatch[1]).trim() : null;\nlet eventType = 'text_message';\nif (callback) {\n  eventType = 'callback_action';\n} else if (startMatch) {\n  eventType = deepLink ? 'deep_link_start' : 'start_reset';\n}\nreturn [{\n  json: {\n    event: {\n      event_type: eventType,\n      text,\n      chatId: String(chatIdRaw || ''),\n      userId: String(userIdRaw || ''),\n      messageId: String(messageIdRaw || ''),\n      timestamp: Date.now(),\n      callback_query: callbackData ? { data: callbackData } : null,\n      deep_link: deepLink,\n    },\n  },\n}];"
+      },
+      "id": "event-normalizer",
+      "name": "Event Normalizer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://convex-session-load.placeholder.local/http/session-load",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"userId\":\"{{$json.event.userId}}\"}",
+        "options": {}
+      },
+      "id": "session-load",
+      "name": "Session Load",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $json ?? {};\nconst event = payload.event ?? {};\nconst remoteSession = payload.session ?? payload.data?.session ?? null;\nconst remoteExists = payload.session?.exists ?? payload.data?.session?.exists ?? false;\nconst rawSessionData = remoteSession?.data ?? remoteSession;\nconst hasExistingSession = Boolean(remoteExists || (rawSessionData && typeof rawSessionData === 'object' && Object.keys(rawSessionData).length > 0));\nlet sellerId = '__SELLER_ID_FROM_ENV__';\nif (typeof $env !== 'undefined' && $env?.SELLER_ID) {\n  sellerId = String($env.SELLER_ID);\n}\nconst now = Date.now();\nconst baseSession = {\n  isNew: true,\n  session_version: 2,\n  chat_id: String(event.chatId ?? ''),\n  seller_id: sellerId,\n  language: null,\n  stage: 'idle',\n  resolved_flow: 'none',\n  tentative_flow: 'none',\n  next_action: null,\n  route_recommendation: 'stay_exploratory',\n  followup_round: 0,\n  last_asked_key: null,\n  collected_fields: {},\n  missing_information: [],\n  evidence_accumulated: 0,\n  message_history: [],\n  last_understanding_output: null,\n  last_rule_decision: null,\n  last_resolver_output: null,\n  shown_options: [],\n  selected_option: null,\n  ranking_order: [],\n  cheaper_option: null,\n  active_product_id: null,\n  deep_link_context: null,\n  callback_context: null,\n  lead_state: null,\n  notify_state: null,\n  handoff_state: null,\n  recovery_state: null,\n  error_count: 0,\n  updated_at: now,\n};\nconst session = hasExistingSession\n  ? {\n      ...baseSession,\n      ...(rawSessionData && typeof rawSessionData === 'object' ? rawSessionData : {}),\n      isNew: false,\n      chat_id: String((rawSessionData && rawSessionData.chat_id) || event.chatId || ''),\n      seller_id: String((rawSessionData && rawSessionData.seller_id) || sellerId),\n      language: rawSessionData && Object.prototype.hasOwnProperty.call(rawSessionData, 'language') ? rawSessionData.language : null,\n      session_version: 2,\n      updated_at: now,\n    }\n  : baseSession;\nreturn [{ json: { event, session } }];"
+      },
+      "id": "session-bootstrap",
+      "name": "Session Bootstrap",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Input": {
+      "main": [
+        [
+          {
+            "node": "Event Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Session Load",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Load": {
+      "main": [
+        [
+          {
+            "node": "Session Bootstrap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "56246596-3dd5-44cb-bc72-3daa5d9ca387",
+  "activeVersionId": null,
+  "versionCounter": 2,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-04-02T14:52:22.958Z",
+      "createdAt": "2026-04-02T14:52:22.958Z",
+      "role": "workflow:owner",
+      "workflowId": "9XuOQHcbIZqE8scq",
+      "projectId": "0yTr2eWi0tTJaMgu",
+      "project": {
+        "updatedAt": "2026-03-31T22:29:30.641Z",
+        "createdAt": "2026-03-31T22:17:25.718Z",
+        "id": "0yTr2eWi0tTJaMgu",
+        "name": "Abenezer Tadiyos <babig7633@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "f2b22b50-c125-4a5c-b9fe-cd14fe26e319"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": null
+}

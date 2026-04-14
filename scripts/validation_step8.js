@@ -1,0 +1,93 @@
+// Validation — Guaranteed Reply (clean, encoding-safe)
+
+// ── Step 1: parse reply_text from Reply AI output ────────────
+const replyPayload = $json ?? {};
+
+const parseReply = (v) => {
+  if (!v) return '';
+  if (typeof v === 'object' && typeof v.reply_text === 'string') return v.reply_text.trim();
+  if (typeof v === 'string') {
+    try {
+      const p = JSON.parse(v);
+      if (p && typeof p.reply_text === 'string') return p.reply_text.trim();
+    } catch {}
+  }
+  return '';
+};
+
+const raw_reply = parseReply(replyPayload.choices?.[0]?.message?.content)
+  || parseReply(replyPayload.output_text)
+  || parseReply(replyPayload.text)
+  || parseReply(replyPayload)
+  || '';
+
+// ── Step 2: safety guard (user-specified logic) ───────────────
+const isSafe = raw_reply.length > 0 && raw_reply.length < 600;
+const fallback = "Sorry, I didn't catch that clearly. Please ask about price, location, delivery or exchange.";
+const reply_text = isSafe ? raw_reply : fallback;
+
+// ── Step 3: get event + session for downstream nodes ─────────
+let base = {};
+try {
+  const bdr = $json;
+  if (bdr && bdr.rules_output) { base = bdr; }
+  else {
+    const rl = $json;
+    base = rl ?? {};
+  }
+} catch {}
+
+const event   = (base.event   && typeof base.event   === 'object') ? base.event   : {};
+const session = (base.session && typeof base.session === 'object') ? base.session : {};
+const chat_id = event.chat_id ?? session.chat_id ?? null;
+const now = Date.now();
+
+// ── Step 4: minimal session update for Session Save node ─────
+const isStartReset = event.event_type === 'start_reset' || event.event_type === 'deep_link_start';
+const history = Array.isArray(session.conversation_history) ? session.conversation_history : [];
+const nextHistory = (isStartReset ? [] : history)
+  .concat([{ role: 'assistant', text: reply_text, timestamp: now }])
+  .slice(-12);
+
+const rulesUpdate = base.rules_output?.session_update || {};
+const updatedSession = {
+  ...session,
+  ...rulesUpdate,
+  last_message_at: now,
+  message_count: isStartReset ? 1 : (Math.max(0, Number(session.message_count ?? 0)) + 1),
+  conversation_history: nextHistory,
+};
+
+// ── Step 5: return all fields downstream nodes depend on ─────
+
+  // ── Step 8: Minimal Observability Layer ─────────────────────
+  const is_fallback = Boolean(base.understanding_meta?.fallback_applied || base.understanding_meta?.valid === false);
+  const is_clarification = ['clarification_needed', 'clarify_reference'].includes(rules_output.reply_mode);
+  const ai_confidence = Number(understanding_output.confidence ?? 0);
+
+  const _observability = {
+    ai_confidence,
+    is_fallback,
+    is_clarification,
+    timestamp: now
+  };
+
+  return {
+  json: {
+    event,
+    chat_id,
+    safe_to_send: true,
+    reply_text,
+    used_fallback: !isSafe,
+    raw_reply_text: raw_reply,
+    telegram_payload: {
+      chat_id,
+    },
+    session_update_payload: {
+      user_id: event.user_id ?? null,
+      chat_id: chat_id,
+      session: updatedSession,
+      _observability,
+    },
+  },
+};

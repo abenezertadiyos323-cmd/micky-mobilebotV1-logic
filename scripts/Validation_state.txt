@@ -1,0 +1,12 @@
+L28: // ── Step 3: get event + session for downstream nodes ─────────
+L40: const session = (base.session && typeof base.session === 'object') ? base.session : {};
+L41: const chat_id = event.chat_id ?? event.chatId ?? session.chat_id ?? null;
+L44: // ── Step 4: minimal session update for Session Save node ─────
+L46: const history = Array.isArray(session.conversation_history) ? session.conversation_history : [];
+L47: const nextHistory = (isStartReset ? [] : history)
+L51: const updatedSession = {
+L52: ...session,
+L54: message_count: isStartReset ? 1 : (Math.max(0, Number(session.message_count ?? 0)) + 1),
+L55: conversation_history: nextHistory,
+L70: session_update_payload: {
+L73: session: updatedSession,

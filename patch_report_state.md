@@ -1,0 +1,4 @@
+- **Session Bootstrap**: (SAFE PASS-THROUGH/INIT) Baseline normalization kept intact as starting payload.
+- **Rules Layer**: (SAFE DERIVATION) Accumulating `session_update` internally was kept, but it is now safely merged downstream.
+- **Business Data Resolver**: (SAFE PASS-THROUGH) Confirmed it only reads state and does not mutate it.
+- **Validation**: (RISKY MUTATION) Modified to safely merge `rules_output.session_update` instead of silently dropping upstream state changes.
