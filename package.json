@@ -10,6 +10,7 @@
     "n8n:backup:prod": "node scripts/n8n-backup-workflow.mjs --prod"
   },
   "dependencies": {
+    "convex": "^1.35.1",
     "dotenv": "^16.4.5"
   }
 }

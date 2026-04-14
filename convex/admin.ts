@@ -98,16 +98,18 @@ export const checkAdminAccess = query({
     initData: v.string(),
   },
   handler: async (ctx, args) => {
-    if (!args.initData) return false;
-
-    const botToken = getEnvValue("TELEGRAM_BOT_TOKEN");
-    if (!botToken) {
-      console.warn("Server configuration missing TELEGRAM_BOT_TOKEN");
-      return false;
-    }
-
     try {
+      if (!args.initData) return false;
+
+      const botToken = getEnvValue("TELEGRAM_BOT_TOKEN");
+      if (!botToken) {
+        console.warn("Server configuration missing TELEGRAM_BOT_TOKEN");
+        return false;
+      }
+
       const user = await verifyInitData(args.initData, botToken);
+      if (!user || !user.id) return false;
+
       const admin = await ctx.db
         .query("admins")
         .withIndex("by_telegramId", (q) => q.eq("telegramId", String(user.id)))
@@ -115,7 +117,8 @@ export const checkAdminAccess = query({
 
       return !!(admin && admin.isActive);
     } catch (e) {
-      console.error("Auth check failed:", e);
+      console.error("Auth check failed with error:", e);
+      // Fail safely without crashing the query
       return false;
     }
   },

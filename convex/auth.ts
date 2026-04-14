@@ -96,8 +96,7 @@ const MAX_AUTH_AGE_SECONDS = 24 * 60 * 60;
 const encoder = new TextEncoder();
 
 export function getEnvValue(name: string): string | undefined {
-  const runtime = globalThis as { process?: { env?: Record<string, string | undefined> } };
-  return runtime.process?.env?.[name];
+  return process.env[name];
 }
 
 function buildDataCheckString(params: URLSearchParams) {
