@@ -96,7 +96,10 @@ const MAX_AUTH_AGE_SECONDS = 24 * 60 * 60;
 const encoder = new TextEncoder();
 
 export function getEnvValue(name: string): string | undefined {
-  return process.env[name];
+  if (name === "TELEGRAM_BOT_TOKEN") {
+    return process.env.TELEGRAM_BOT_TOKEN;
+  }
+  return undefined;
 }
 
 function buildDataCheckString(params: URLSearchParams) {

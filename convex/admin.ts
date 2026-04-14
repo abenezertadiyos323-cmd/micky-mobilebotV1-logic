@@ -101,9 +101,9 @@ export const checkAdminAccess = query({
     try {
       if (!args.initData) return false;
 
-      const botToken = getEnvValue("TELEGRAM_BOT_TOKEN");
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
       if (!botToken) {
-        console.warn("Server configuration missing TELEGRAM_BOT_TOKEN");
+        console.warn("TELEGRAM_BOT_TOKEN missing from process.env");
         return false;
       }
 
